@@ -1,0 +1,12 @@
+/*
+ * Copyright (C) 2015 Quanta Tecnologia Eletronica, LTDA.
+ */
+/dts-v1/;
+
+#include "imx6q-quanta.dtsi"
+#include "imx6qdl-quanta-eval.dtsi"
+
+/ {
+	model = "Quanta i.MX6 Evaluation Board Solo/DualLite";
+	compatible = "quanta,eval/dl", "fsl,imx6dl";
+};
