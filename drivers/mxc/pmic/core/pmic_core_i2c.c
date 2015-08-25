@@ -351,8 +351,6 @@ static int __devinit pmic_probe(struct i2c_client *client,
 
 	/* Set and install PMIC IRQ handler */
 
-	set_irq_type(pmic_irq, IRQF_TRIGGER_HIGH);
-
 	ret =
 	    request_irq(pmic_irq, pmic_irq_handler, 0, "PMIC_IRQ",
 			0);
