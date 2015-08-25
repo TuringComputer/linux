@@ -397,7 +397,7 @@ static struct platform_device quanta_button_device = {
 {																			\
 	.gpio		= gpio_num,													\
 	.name		= desc, 													\
-	.active_low = 1,														\
+	.active_low = 0,														\
 	.retain_state_suspended = 0,											\
 	.default_state = def_state,												\
 }
@@ -686,18 +686,6 @@ static struct mxc_mmc_platform_data mmc1_data = {
 	.wp_status = sdhc_write_protect,
 	.status = sdhc_get_card_det_status,
 	.card_inserted_state = 0,
-	.clock_mmc = "esdhc_clk",
-	.power_mmc = NULL,
-};
-
-static struct mxc_mmc_platform_data mmc2_data = {
-	.ocr_mask = MMC_VDD_27_28 | MMC_VDD_28_29 | MMC_VDD_29_30
-		| MMC_VDD_31_32,
-	.caps = MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA
-		| MMC_CAP_DATA_DDR,
-	.min_clk = 400000,
-	.max_clk = 50000000,
-	.card_inserted_state = 1,
 	.clock_mmc = "esdhc_clk",
 	.power_mmc = NULL,
 };
@@ -999,7 +987,6 @@ mxc_board_init(void)
 	mxc_register_device(&mxc_pwm2_device, NULL);
 	mxc_register_device(&mxc_pwm1_backlight_device, &mxc_pwm_backlight_data);
 	mxc_register_device(&mxcsdhc1_device, &mmc1_data);
-	mxc_register_device(&mxcsdhc2_device, &mmc2_data);
 	mxc_register_device(&mxcsdhc3_device, &mmc3_data);
 	mxc_register_device(&mxc_ssi1_device, NULL);
 	mxc_register_device(&mxc_ssi2_device, NULL);
@@ -1047,8 +1034,8 @@ mx53_quanta_timer_init(void)
 
 	mx53_clocks_init(32768, 24000000, 0, 0);
 
-	uart_clk = clk_get_sys("mxcintuart.2", NULL);
-	early_console_setup(MX53_BASE_ADDR(UART3_BASE_ADDR), uart_clk);
+	uart_clk = clk_get_sys("mxcintuart.4", NULL);
+	early_console_setup(MX53_BASE_ADDR(UART5_BASE_ADDR), uart_clk);
 }
 
 static struct sys_timer mxc_timer = {
