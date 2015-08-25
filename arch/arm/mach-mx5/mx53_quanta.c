@@ -397,7 +397,7 @@ static struct platform_device quanta_button_device = {
 {																			\
 	.gpio		= gpio_num,													\
 	.name		= desc, 													\
-	.active_low = 0,														\
+	.active_low = 1,														\
 	.retain_state_suspended = 0,											\
 	.default_state = def_state,												\
 }
