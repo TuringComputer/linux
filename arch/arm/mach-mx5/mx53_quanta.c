@@ -104,7 +104,7 @@
 #define GPIO22						QUANTA_SOM_GPIO22		// HDMI_CEC_D
 #define GPIO23						QUANTA_SOM_GPIO23		// HDMI INT
 #define GPIO24						QUANTA_SOM_GPIO24		// HDMI Reset
-#define GPIO25						QUANTA_SOM_GPIO25		// Headphone Detect?
+#define GPIO25						QUANTA_SOM_GPIO25		// Headphone Detect
 #define OSC_CKIH1_EN				QUANTA_SOM_GPIO26
 #define LCD_EN						QUANTA_SOM_GPIO27
 #define OTG_PWR_EN					QUANTA_SOM_OTG_PWR_EN
@@ -138,7 +138,6 @@ static iomux_v3_cfg_t mx53_quanta_pads[] = {
 		MX53_PAD_EIM_D17__ECSPI1_MISO,
 		MX53_PAD_EIM_D18__ECSPI1_MOSI,
 		MX53_PAD_KEY_COL0__ECSPI1_SCLK,
-		MX53_PAD_KEY_COL2__ECSPI1_SS1,
 		/*EMI*/
 		/*All Others pins are dedicated*/
 		MX53_PAD_EIM_LBA__EMI_WEIM_LBA,
@@ -213,6 +212,7 @@ static iomux_v3_cfg_t mx53_quanta_pads[] = {
 		MX53_PAD_DISP0_DAT9__GPIO4_30,
 		MX53_PAD_DISP0_DAT10__GPIO4_31,
 		MX53_PAD_GPIO_19__GPIO4_5,
+		MX53_PAD_KEY_COL2__GPIO4_10,
 		/*GPIO5*/
 		MX53_PAD_DISP0_DAT21__GPIO5_15,
 		MX53_PAD_DISP0_DAT22__GPIO5_16,
@@ -497,12 +497,9 @@ static struct mxc_dvfs_platform_data dvfs_core_data = {
 
 static struct mxc_bus_freq_platform_data bus_freq_data;
 
-static struct tve_platform_data tve_data = {
-	.boot_enable = MXC_TVE_VGA,
-};
-
 static struct ldb_platform_data ldb_data = {
 	.ext_ref = 1,
+	.boot_enable = MXC_LDBDI0,
 };
 
 static void mxc_iim_enable_fuse(void)
@@ -690,6 +687,17 @@ static struct mxc_mmc_platform_data mmc1_data = {
 	.power_mmc = NULL,
 };
 
+static struct mxc_mmc_platform_data mmc2_data = {
+	.ocr_mask = MMC_VDD_27_28 | MMC_VDD_28_29 | MMC_VDD_29_30
+		| MMC_VDD_31_32,
+	.caps = MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA
+		| MMC_CAP_DATA_DDR,
+	.min_clk = 400000,
+	.max_clk = 50000000,
+	.card_inserted_state = 1,
+	.clock_mmc = "esdhc_clk",
+};
+
 static struct mxc_mmc_platform_data mmc3_data = {
 	.ocr_mask = MMC_VDD_27_28 | MMC_VDD_28_29 | MMC_VDD_29_30
 	| MMC_VDD_31_32 | MMC_VDD_32_33 | MMC_VDD_33_34 | MMC_VDD_34_35 |MMC_VDD_35_36,
@@ -732,27 +740,7 @@ static struct mxc_asrc_platform_data mxc_asrc_data = {
 	.clk_map_ver = 2,
 };
 
-static struct mxc_spdif_platform_data mxc_spdif_data = {
-	.spdif_tx = 1,
-	.spdif_rx = 0,
-	.spdif_clk_44100 = -1,	/* Souce from CKIH1 for 44.1K */
-	/* Source from CCM spdif_clk (24M) for 48k and 32k
-	 * It's not accurate
-	 */
-	.spdif_clk_48000 = 1,
-	.spdif_clkid = 0,
-	.spdif_clk = NULL,	/* spdif bus clk */
-};
-
-static struct mxc_audio_platform_data spdif_audio_data = {
-	.ext_ram_tx = 1,
-};
-
-static struct platform_device mxc_spdif_audio_device = {
-	.name = "imx-spdif-audio-device",
-};
-
-static void mx53_quanta_usbh1_vbus(bool on)
+static void mx53_quanta_otghost_vbus(bool on)
 {
 	if (on)
 		gpio_set_value(OTG_PWR_EN, 1);
@@ -933,23 +921,32 @@ static void __init
 mxc_board_init(void)
 {
 
+	pr_info("Initializing Turing's IMX53 Board\n");
+
 	mxc_ipu_data.di_clk[0] = clk_get(NULL, "ipu_di0_clk");
 	mxc_ipu_data.di_clk[1] = clk_get(NULL, "ipu_di1_clk");
 	mxc_ipu_data.csi_clk[0] = clk_get(NULL, "ssi_ext1_clk");
-	mxc_spdif_data.spdif_core_clk = clk_get(NULL, "spdif_xtal_clk");
-	clk_put(mxc_spdif_data.spdif_core_clk);
 
-	mxcsdhc3_device.resource[2].start = gpio_to_irq(SD_CD);
-	mxcsdhc3_device.resource[2].end = gpio_to_irq(SD_CD);
+	/*
+	 *ssi_ext1_clk was enbled in arch/arm/mach-mx5/clock.c, and it was kept
+	 *open to provide clock for audio codec on i.Mx53 Quickstart, but MX53
+	 *QUANTA board have no needs to do that, so we close it here
+	 */
+	clk_disable(mxc_ipu_data.csi_clk[0]);
 
 	mxc_cpu_common_init();
 	mx53_quanta_io_init();
 
+	mxcsdhc1_device.resource[2].start = gpio_to_irq(SD_CD);
+	mxcsdhc1_device.resource[2].end = gpio_to_irq(SD_CD);
+
 	mxc_register_device(&mxc_dma_device, NULL);
 	mxc_register_device(&mxc_wdt_device, NULL);
+
 	mxc_register_device(&mxci2c_devices[0], &mxci2c_data);
 	mxc_register_device(&mxci2c_devices[1], &mxci2c_data);
 	mxc_register_device(&mxci2c_devices[2], &mxci2c_data);
+
 	mxc_register_device(&mx5_pmu_device, NULL);
 
 	if (board_is_mx53_quanta_mc34708()) {
@@ -957,7 +954,6 @@ mxc_board_init(void)
 		// PMIC MC34708
 		mx53_quanta_init_mc34708();
 		dvfs_core_data.reg_id = "SW1A";
-		tve_data.dac_reg = "VDAC";
 		bus_freq_data.gp_reg_id = "SW1A";
 		bus_freq_data.lp_reg_id = "SW2";
 		mxc_register_device(&mxc_powerkey_device, &pwrkey_data);
@@ -966,7 +962,6 @@ mxc_board_init(void)
 		// PMIC DA9053
 		mx53_quanta_init_da9052();
 		dvfs_core_data.reg_id = "DA9052_BUCK_CORE";
-		tve_data.dac_reg = "DA9052_LDO7";
 		bus_freq_data.gp_reg_id = "DA9052_BUCK_CORE";
 		bus_freq_data.lp_reg_id = "DA9052_BUCK_PRO";
 	}
@@ -974,11 +969,12 @@ mxc_board_init(void)
 	mxc_register_device(&mxc_rtc_device, NULL);
 	mxc_register_device(&mxc_ipu_device, &mxc_ipu_data);
 	mxc_register_device(&mxc_ldb_device, &ldb_data);
-	mxc_register_device(&mxc_tve_device, &tve_data);
+
 	if (!mxc_fuse_get_vpu_status())
 		mxc_register_device(&mxcvpu_device, &mxc_vpu_data);
 	if (!mxc_fuse_get_gpu_status())
 		mxc_register_device(&gpu_device, &gpu_data);
+
 	mxc_register_device(&mxcscc_device, NULL);
 	mxc_register_device(&pm_device, &quanta_pm_data);
 	mxc_register_device(&mxc_dvfs_core_device, &dvfs_core_data);
@@ -987,14 +983,15 @@ mxc_board_init(void)
 	mxc_register_device(&mxc_pwm2_device, NULL);
 	mxc_register_device(&mxc_pwm1_backlight_device, &mxc_pwm_backlight_data);
 	mxc_register_device(&mxcsdhc1_device, &mmc1_data);
+	mxc_register_device(&mxcsdhc2_device, &mmc2_data);
 	mxc_register_device(&mxcsdhc3_device, &mmc3_data);
 	mxc_register_device(&mxc_ssi1_device, NULL);
 	mxc_register_device(&mxc_ssi2_device, NULL);
-	mxc_register_device(&mxc_alsa_spdif_device, &mxc_spdif_data);
 	mxc_register_device(&ahci_fsl_device, &sata_data);
 	mxc_register_device(&imx_ahci_device_hwmon, NULL);
 	mxc_register_device(&mxc_fec_device, &fec_data);
 	mxc_register_device(&mxc_ptp_device, NULL);
+
 	/* ASRC is only available for MX53 TO2.0 */
 	if (mx53_revision() >= IMX_CHIP_REVISION_2_0) {
 		mxc_asrc_data.asrc_core_clk = clk_get(NULL, "asrc_clk");
@@ -1012,17 +1009,15 @@ mxc_board_init(void)
 	clk_put(sgtl5000_data.ext_ram_clk);
 	mxc_register_device(&mxc_sgtl5000_device, &sgtl5000_data);
 
-	spdif_audio_data.ext_ram_clk = clk_get(NULL, "emi_fast_clk");
-	clk_put(spdif_audio_data.ext_ram_clk);
-	mxc_register_device(&mxc_spdif_audio_device, &spdif_audio_data);
-
 	mx5_usb_dr_init();
-	mx5_set_host1_vbus_func(mx53_quanta_usbh1_vbus);
+	mx5_set_otghost_vbus_func(mx53_quanta_otghost_vbus);
 	mx5_usbh1_init();
 	mxc_register_device(&mxc_v4l2_device, NULL);
 	mxc_register_device(&mxc_v4l2out_device, NULL);
+
 	platform_device_register(&quanta_button_device);
 	platform_device_register(&quanta_leds_device);
+
 	pm_power_off = mx53_quanta_power_off;
 	pm_i2c_init(I2C1_BASE_ADDR - MX53_OFFSET);
 }
