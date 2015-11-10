@@ -320,15 +320,15 @@ struct mxc_lcd_platform_data {
 #define AUDIO_MODE_SPDIF             0
 #define AUDIO_MODE_I2S               1
 	int audio_mode;
-	// Turing - Number of Channels
-#define AUDIO_CHANNEL_2CH            0
-#define AUDIO_CHANNEL_3CH            1
-#define AUDIO_CHANNEL_4CH            2
-#define AUDIO_CHANNEL_5CH            3
-#define AUDIO_CHANNEL_6CH            4
-#define AUDIO_CHANNEL_7CH            5
-#define AUDIO_CHANNEL_8CH            6
+	// Turing - For I2S, need to set:
+	// 		Number of Channels (from 2 to 8)
 	int audio_channels;
+	//		Master Clock (in Hz)
+	int audio_mclk;
+	//		Word Length (bits, from 16 to 24)
+	int audio_word_len;
+	//		Sample Frequency (in Hz)
+	int audio_fs;
 };
 
 struct mxc_ddc_platform_data {

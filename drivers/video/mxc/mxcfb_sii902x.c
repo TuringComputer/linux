@@ -560,18 +560,14 @@ static void sii902x_setaudio(struct sii902x_data *sii902x)
 	dev_dbg(&sii902x->client->dev, "set audio\n");
 
 	/* mute audio */
-	read_modify_tpi(sii902x->client, TPI_AUDIO_INTERFACE_REG,
-			AUDIO_MUTE_MASK, AUDIO_MUTE_MUTED);
+	read_modify_tpi(sii902x->client, TPI_AUDIO_INTERFACE_REG, AUDIO_MUTE_MASK, AUDIO_MUTE_MUTED);
+
 	if (sii902x->audio_mode == AMODE_I2S) {
-		read_modify_tpi(sii902x->client, TPI_AUDIO_INTERFACE_REG,
-				AUDIO_SEL_MASK, AUD_IF_I2S);
-		i2c_smbus_write_byte_data(sii902x->client, TPI_AUDIO_HANDLING,
-				0x08 | AUD_DO_NOT_CHECK);
+		read_modify_tpi(sii902x->client, TPI_AUDIO_INTERFACE_REG, AUDIO_SEL_MASK, AUD_IF_I2S);
+		i2c_smbus_write_byte_data(sii902x->client, TPI_AUDIO_HANDLING, 0x08 | AUD_DO_NOT_CHECK);
 	} else {
-		read_modify_tpi(sii902x->client, TPI_AUDIO_INTERFACE_REG,
-				AUDIO_SEL_MASK, AUD_IF_SPDIF);
-		i2c_smbus_write_byte_data(sii902x->client, TPI_AUDIO_HANDLING,
-				AUD_PASS_BASIC);
+		read_modify_tpi(sii902x->client, TPI_AUDIO_INTERFACE_REG, AUDIO_SEL_MASK, AUD_IF_SPDIF);
+		i2c_smbus_write_byte_data(sii902x->client, TPI_AUDIO_HANDLING, AUD_PASS_BASIC);
 	}
 
 	if (sii902x->audio_channels == ACHANNEL_2CH)
@@ -597,8 +593,7 @@ static void sii902x_setaudio(struct sii902x_data *sii902x)
 		i2c_smbus_write_byte_data(sii902x->client, TPI_I2S_CHST_1, 0x00);
 		i2c_smbus_write_byte_data(sii902x->client, TPI_I2S_CHST_2, 0x00);
 		i2c_smbus_write_byte_data(sii902x->client, TPI_I2S_CHST_3, sii902x->audiofs);
-		i2c_smbus_write_byte_data(sii902x->client, TPI_I2S_CHST_4,
-					(sii902x->audiofs << 4) | sii902x->audio_word_len);
+		i2c_smbus_write_byte_data(sii902x->client, TPI_I2S_CHST_4,(sii902x->audiofs << 4) | sii902x->audio_word_len);
 
 		/* added for 16bit auido noise issue */
 		write_idx_reg(sii902x->client, INDEXED_PAGE_1, 0x24, sii902x->audio_word_len);
@@ -704,9 +699,9 @@ static void sii902x_setup(struct sii902x_data *sii902x, struct fb_info *fbi)
 	dev_dbg(&sii902x->client->dev, "vic %d\n", sii902x->vic);
 	dev_dbg(&sii902x->client->dev, "pixrep %d\n", sii902x->pixrep);
 	if (sii902x->aspect_ratio == VMD_ASPECT_RATIO_4x3) {
-		dev_dbg(&sii902x->client->dev, "aspect 4:3\n");
+		dev_info(&sii902x->client->dev, "aspect 4:3\n");
 	} else {
-		dev_dbg(&sii902x->client->dev, "aspect 16:9\n");
+		dev_info(&sii902x->client->dev, "aspect 16:9\n");
 	}
 	if (sii902x->colorimetry == COLORIMETRY_601) {
 		dev_dbg(&sii902x->client->dev, "COLORIMETRY_601\n");
@@ -943,7 +938,7 @@ static int sii902x_cable_connected(struct sii902x_data *sii902x)
 
 static void sii902x_cable_disconnected(struct sii902x_data *sii902x)
 {
-	dev_dbg(&sii902x->client->dev, "cable disconnected\n");
+	dev_info(&sii902x->client->dev, "cable disconnected\n");
 	sii902x_rx_powerdown(sii902x);
 	sii902x->cable_plugin = false;
 }
@@ -1077,8 +1072,7 @@ static int __devinit sii902x_probe(struct i2c_client *client,
 	struct fb_info edid_fbi;
 	struct sii902x_data *sii902x;
 
-	if (plat->boot_enable &&
-		!g_enable_hdmi)
+	if (plat->boot_enable && !g_enable_hdmi)
 		g_enable_hdmi = MXC_ENABLE;
 	if (!g_enable_hdmi)
 		g_enable_hdmi = MXC_DISABLE;
@@ -1104,42 +1098,152 @@ static int __devinit sii902x_probe(struct i2c_client *client,
 
 	sii902x->power_state = TX_POWER_STATE_D2;
 	sii902x->icolor_space = RGB;
+
 	// Turing: I2S or SPDIF
 	if(plat->audio_mode == AUDIO_MODE_I2S)
 	{
 		sii902x->audio_mode = AMODE_I2S;
+
+		// Number of channels
+		switch(plat->audio_channels)
+		{
+			case 2:
+				sii902x->audio_channels = ACHANNEL_2CH;
+				break;
+			case 3:
+				sii902x->audio_channels = ACHANNEL_3CH;
+				break;
+			case 4:
+				sii902x->audio_channels = ACHANNEL_4CH;
+				break;
+			case 5:
+				sii902x->audio_channels = ACHANNEL_5CH;
+				break;
+			case 6:
+				sii902x->audio_channels = ACHANNEL_6CH;
+				break;
+			case 7:
+				sii902x->audio_channels = ACHANNEL_7CH;
+				break;
+			case 8:
+				sii902x->audio_channels = ACHANNEL_8CH;
+				break;
+			default:
+				ret = -EINVAL;
+				dev_err(&sii902x->client->dev, "Invalid Number of Channels\n");
+				goto i2s_error;
+				break;
+		}
+
+		// Sampling Frequency
+		switch(plat->audio_fs)
+		{
+			case 44100:
+				sii902x->audiofs = 0x00;
+				break;
+			case 32000:
+				sii902x->audiofs = 0x03;
+				break;
+			case 48000:
+				sii902x->audiofs = 0x02;
+				break;
+			case 88200:
+				sii902x->audiofs = 0x08;
+				break;
+			case 96000:
+				sii902x->audiofs = 0x0A;
+				break;
+			case 176400:
+				sii902x->audiofs = 0x0C;
+				break;
+			case 192000:
+				sii902x->audiofs = 0x0E;
+				break;
+			default:
+				ret = -EINVAL;
+				dev_err(&sii902x->client->dev, "Invalid Sampling Frequency\n");
+				goto i2s_error;
+				break;
+		}
+
+		// Word Length
+		switch(plat->audio_word_len)
+		{
+			case 16:
+				sii902x->audio_word_len = 0x02;
+				break;
+			case 17:
+				sii902x->audio_word_len = 0x0C;
+				break;
+			case 18:
+				sii902x->audio_word_len = 0x04;
+				break;
+			case 19:
+				sii902x->audio_word_len = 0x08;
+				break;
+			case 20:
+				sii902x->audio_word_len = 0x0A;
+				break;
+			case 21:
+				sii902x->audio_word_len = 0x0D;
+				break;
+			case 22:
+				sii902x->audio_word_len = 0x05;
+				break;
+			case 23:
+				sii902x->audio_word_len = 0x09;
+				break;
+			case 24:
+				sii902x->audio_word_len = 0x0B;
+				break;
+			default:
+				ret = -EINVAL;
+				dev_err(&sii902x->client->dev, "Invalid Word Length\n");
+				goto i2s_error;
+				break;
+		}
+
+		// Master Clock divider (suppose I2S left justified, MSB first, Left = WS Low, Data Changing in Rising Edge)
+		switch(plat->audio_mclk / plat->audio_fs)
+		{
+			case 128:
+				sii902x->audio_i2s_fmt = 0x00;
+				break;
+			case 192:
+				sii902x->audio_i2s_fmt = 0x07;
+				break;
+			case 256:
+				sii902x->audio_i2s_fmt = 0x01;
+				break;
+			case 384:
+				sii902x->audio_i2s_fmt = 0x02;
+				break;
+			case 512:
+				sii902x->audio_i2s_fmt = 0x03;
+				break;
+			case 768:
+				sii902x->audio_i2s_fmt = 0x04;
+				break;
+			case 1024:
+				sii902x->audio_i2s_fmt = 0x05;
+				break;
+			case 1152:
+				sii902x->audio_i2s_fmt = 0x06;
+				break;
+			default:
+				ret = -EINVAL;
+				dev_err(&sii902x->client->dev, "Invalid Master Clock\n");
+				goto i2s_error;
+				break;
+		}
+
+		dev_info(&sii902x->client->dev, "I2S enabled\n");
+
 	}
 	else
 	{
 		sii902x->audio_mode = AMODE_SPDIF;
-	}
-	// Turing: Number of channels
-	switch(plat->audio_channels)
-	{
-		case AUDIO_CHANNEL_2CH:
-			sii902x->audio_channels = ACHANNEL_2CH;
-			break;
-		case AUDIO_CHANNEL_3CH:
-			sii902x->audio_channels = ACHANNEL_3CH;
-			break;
-		case AUDIO_CHANNEL_4CH:
-			sii902x->audio_channels = ACHANNEL_4CH;
-			break;
-		case AUDIO_CHANNEL_5CH:
-			sii902x->audio_channels = ACHANNEL_5CH;
-			break;
-		case AUDIO_CHANNEL_6CH:
-			sii902x->audio_channels = ACHANNEL_6CH;
-			break;
-		case AUDIO_CHANNEL_7CH:
-			sii902x->audio_channels = ACHANNEL_7CH;
-			break;
-		case AUDIO_CHANNEL_8CH:
-			sii902x->audio_channels = ACHANNEL_8CH;
-			break;
-		default:
-			sii902x->audio_channels = ACHANNEL_2CH;
-			break;
+		dev_info(&sii902x->client->dev, "SPDIF enabled\n");
 	}
 
 	sii902x->pdev = platform_device_register_simple("sii902x", 0, NULL, 0);
@@ -1244,6 +1348,7 @@ init_failed:
 get_pins_failed:
 	platform_device_unregister(sii902x->pdev);
 register_pltdev_failed:
+i2s_error:
 	kfree(sii902x);
 alloc_failed:
 	return ret;

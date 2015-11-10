@@ -1298,8 +1298,7 @@ static int ldb_probe(struct platform_device *pdev)
 	int mxc_ldb_major;
 	struct class *mxc_ldb_class;
 
-	if ((plat_data->boot_enable & (MXC_LDBDI0 | MXC_LDBDI1))
-		&& !g_enable_ldb) {
+	if ((plat_data->boot_enable & (MXC_LDBDI0 | MXC_LDBDI1)) && !g_enable_ldb) {
 		g_enable_ldb = MXC_ENABLE;
 		if (plat_data->boot_enable & MXC_LDBDI0)
 			g_di0_used = true;
