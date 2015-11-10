@@ -1056,7 +1056,7 @@ int32_t ipu_init_sync_panel(int disp, uint32_t pixel_clk,
 	int ipu_freq_scaling_enabled = 0;
 	struct clk *di_parent;
 
-	dev_dbg(g_ipu_dev, "panel size = %d x %d\n", width, height);
+	dev_info(g_ipu_dev, "panel size = %d x %d\n", width, height);
 
 	if ((v_sync_width == 0) || (h_sync_width == 0))
 		return EINVAL;
@@ -1066,7 +1066,7 @@ int32_t ipu_init_sync_panel(int disp, uint32_t pixel_clk,
 	v_total = height + v_sync_width + v_start_width + v_end_width;
 
 	/* Init clocking */
-	dev_dbg(g_ipu_dev, "pixel clk = %d\n", pixel_clk);
+	dev_info(g_ipu_dev, "pixel clk = %d\n", pixel_clk);
 
 	/*clear DI*/
 	__raw_writel((1 << 21), DI_GENERAL(disp));
@@ -1076,7 +1076,7 @@ int32_t ipu_init_sync_panel(int disp, uint32_t pixel_clk,
 		clk_get(NULL, "ldb_di0_clk") == di_parent ||
 		clk_get(NULL, "ldb_di1_clk") == di_parent) {
 		/* if di clk parent is tve/ldb, then keep it;*/
-		dev_dbg(g_ipu_dev, "use special clk parent\n");
+		dev_info(g_ipu_dev, "use special clk parent\n");
 		clk_set_parent(g_pixel_clk[disp], g_di_clk[disp]);
 	} else {
 		/* try ipu clk first*/
@@ -1130,7 +1130,7 @@ int32_t ipu_init_sync_panel(int disp, uint32_t pixel_clk,
 
 	map = _ipu_pixfmt_to_map(pixel_fmt);
 	if (map < 0) {
-		dev_dbg(g_ipu_dev, "IPU_DISP: No MAP\n");
+		dev_info(g_ipu_dev, "IPU_DISP: No MAP\n");
 		spin_unlock_irqrestore(&ipu_lock, lock_flags);
 		return -EINVAL;
 	}

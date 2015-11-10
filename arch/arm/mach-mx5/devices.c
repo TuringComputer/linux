@@ -1454,6 +1454,11 @@ static struct resource mxc_gpu2d_resources[] = {
 	},
 };
 
+struct platform_device usb_mass_storage_device = {
+	.name	= "usb_mass_storage",
+	.id	= -1,
+};
+
 static struct resource mlb_resources[] = {
 	[0] = {
 	       .start = MLB_BASE_ADDR,

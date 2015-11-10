@@ -69,48 +69,48 @@
 #include "devices.h"
 #include "usb.h"
 #include "pmic.h"
-#include "mx53_quanta.h"
+#include "mx53_turing.h"
 
 /*!
- * @file mach-mx5/mx53_quanta.c
+ * @file mach-mx5/mx53_turing.c
  *
- * @brief This file contains MX53 quanta board specific initialization routines.
+ * @brief This file contains MX53 turing board specific initialization routines.
  *
  * @ingroup MSL_MX53
  */
 
-#define GPIO0						QUANTA_SOM_GPIO00		// CSI Reset
-#define GPIO1						QUANTA_SOM_GPIO01		// USB Hub Reset
-#define GPIO2						QUANTA_SOM_GPIO02
-#define GPIO3						QUANTA_SOM_GPIO03
-#define GPIO4						QUANTA_SOM_GPIO04
-#define GPIO5						QUANTA_SOM_GPIO05
-#define GPIO6						QUANTA_SOM_GPIO06
-#define GPIO7						QUANTA_SOM_GPIO07
-#define GPIO8						QUANTA_SOM_GPIO08
-#define GPIO9						QUANTA_SOM_GPIO09
-#define GPIO10						QUANTA_SOM_GPIO10
-#define GPIO11						QUANTA_SOM_GPIO11
-#define GPIO12						QUANTA_SOM_GPIO12
-#define GPIO13						QUANTA_SOM_GPIO13
-#define GPIO14						QUANTA_SOM_GPIO14		// LED 1
-#define GPIO15						QUANTA_SOM_GPIO15		// LED 2
-#define GPIO16						QUANTA_SOM_GPIO16		// LED 3
-#define GPIO17						QUANTA_SOM_GPIO17		// LED 4
-#define GPIO18						QUANTA_SOM_GPIO18		// LED 5
-#define GPIO19						QUANTA_SOM_GPIO19		// BUTTON 1
-#define GPIO20						QUANTA_SOM_GPIO20		// BUTTON 2
-#define GPIO21						QUANTA_SOM_GPIO21		// BUTTON 3
-#define GPIO22						QUANTA_SOM_GPIO22		// HDMI_CEC_D
-#define GPIO23						QUANTA_SOM_GPIO23		// HDMI INT
-#define GPIO24						QUANTA_SOM_GPIO24		// HDMI Reset
-#define GPIO25						QUANTA_SOM_GPIO25		// Headphone Detect
-#define OSC_CKIH1_EN				QUANTA_SOM_GPIO26
-#define LCD_EN						QUANTA_SOM_GPIO27
-#define OTG_PWR_EN					QUANTA_SOM_OTG_PWR_EN
-#define OTG_OC						QUANTA_SOM_OTG_OC
-#define SD_CD						QUANTA_SOM_SD1_CD
-#define SD_WP						QUANTA_SOM_SD1_WP
+#define GPIO0						TURING_SOM_GPIO00		// CSI Reset
+#define GPIO1						TURING_SOM_GPIO01		// USB Hub Reset
+#define GPIO2						TURING_SOM_GPIO02
+#define GPIO3						TURING_SOM_GPIO03
+#define GPIO4						TURING_SOM_GPIO04
+#define GPIO5						TURING_SOM_GPIO05
+#define GPIO6						TURING_SOM_GPIO06
+#define GPIO7						TURING_SOM_GPIO07
+#define GPIO8						TURING_SOM_GPIO08
+#define GPIO9						TURING_SOM_GPIO09
+#define GPIO10						TURING_SOM_GPIO10
+#define GPIO11						TURING_SOM_GPIO11
+#define GPIO12						TURING_SOM_GPIO12
+#define GPIO13						TURING_SOM_GPIO13
+#define GPIO14						TURING_SOM_GPIO14		// LED 1
+#define GPIO15						TURING_SOM_GPIO15		// LED 2
+#define GPIO16						TURING_SOM_GPIO16		// LED 3
+#define GPIO17						TURING_SOM_GPIO17		// LED 4
+#define GPIO18						TURING_SOM_GPIO18		// LED 5
+#define GPIO19						TURING_SOM_GPIO19		// BUTTON 1
+#define GPIO20						TURING_SOM_GPIO20		// BUTTON 2
+#define GPIO21						TURING_SOM_GPIO21		// BUTTON 3
+#define GPIO22						TURING_SOM_GPIO22		// HDMI_CEC_D
+#define GPIO23						TURING_SOM_GPIO23		// HDMI INT
+#define GPIO24						TURING_SOM_GPIO24		// HDMI Reset
+#define GPIO25						TURING_SOM_GPIO25		// Headphone Detect
+#define OSC_CKIH1_EN				TURING_SOM_GPIO26
+#define LCD_EN						TURING_SOM_GPIO27
+#define OTG_PWR_EN					TURING_SOM_OTG_PWR_EN
+#define OTG_OC						TURING_SOM_OTG_OC
+#define SD_CD						TURING_SOM_SD1_CD
+#define SD_WP						TURING_SOM_SD1_WP
 
 #define MX53_OFFSET					(0x20000000)
 #define TZIC_WAKEUP0_OFFSET         (0x0E00)
@@ -121,7 +121,7 @@
 
 extern void pm_i2c_init(u32 base_addr);
 
-static iomux_v3_cfg_t mx53_quanta_pads[] = {
+static iomux_v3_cfg_t mx53_turing_pads[] = {
 		/*AUDMUX*/
 		MX53_PAD_CSI0_DAT7__AUDMUX_AUD3_RXD,
 		MX53_PAD_CSI0_DAT4__AUDMUX_AUD3_TXC,
@@ -324,7 +324,7 @@ static iomux_v3_cfg_t mx53_quanta_pads[] = {
 		MX53_PAD_GPIO_0__CCM_SSI_EXT1_CLK
 };
 
-static void quanta_da9053_irq_wakeup_only_fixup(void)
+static void turing_da9053_irq_wakeup_only_fixup(void)
 {
 	void __iomem *tzic_base;
 	tzic_base = ioremap(MX53_TZIC_BASE_ADDR, SZ_4K);
@@ -341,25 +341,25 @@ static void quanta_da9053_irq_wakeup_only_fixup(void)
 	pr_info("only da9053 irq is wakeup-enabled\n");
 }
 
-static void quanta_suspend_enter(void)
+static void turing_suspend_enter(void)
 {
-	if (!board_is_mx53_quanta_mc34708()) {
-		quanta_da9053_irq_wakeup_only_fixup();
+	if (!board_is_mx53_turing_mc34708()) {
+		turing_da9053_irq_wakeup_only_fixup();
 		da9053_suspend_cmd_sw();
 	}
 }
 
-static void quanta_suspend_exit(void)
+static void turing_suspend_exit(void)
 {
-	if (!board_is_mx53_quanta_mc34708()) {
+	if (!board_is_mx53_turing_mc34708()) {
 		if (da9053_get_chip_version())
 			da9053_restore_volt_settings();
 	}
 }
 
-static struct mxc_pm_platform_data quanta_pm_data = {
-	.suspend_enter = quanta_suspend_enter,
-	.suspend_exit = quanta_suspend_exit,
+static struct mxc_pm_platform_data turing_pm_data = {
+	.suspend_enter = turing_suspend_enter,
+	.suspend_exit = turing_suspend_exit,
 };
 
 #define GPIO_BUTTON(gpio_num, ev_code, act_low, descr, wake, debounce_ms)	\
@@ -373,23 +373,23 @@ static struct mxc_pm_platform_data quanta_pm_data = {
 	.debounce_interval = debounce_ms,										\
 }
 
-static struct gpio_keys_button quanta_buttons[] = {
+static struct gpio_keys_button turing_buttons[] = {
 	GPIO_BUTTON(GPIO19, KEY_MENU, 1, "menu", 0, 30),
 	GPIO_BUTTON(GPIO20, KEY_BACK, 1, "back", 0, 30),
 	GPIO_BUTTON(GPIO21, KEY_HOME, 1, "home", 1, 30),
 };
 
-static struct gpio_keys_platform_data quanta_button_data = {
-	.buttons	= quanta_buttons,
-	.nbuttons	= ARRAY_SIZE(quanta_buttons),
+static struct gpio_keys_platform_data turing_button_data = {
+	.buttons	= turing_buttons,
+	.nbuttons	= ARRAY_SIZE(turing_buttons),
 };
 
-static struct platform_device quanta_button_device = {
+static struct platform_device turing_button_device = {
 	.name		= "gpio-keys",
 	.id		= -1,
 	.num_resources  = 0,
 	.dev		= {
-		.platform_data = &quanta_button_data,
+		.platform_data = &turing_button_data,
 	}
 };
 
@@ -402,7 +402,7 @@ static struct platform_device quanta_button_device = {
 	.default_state = def_state,												\
 }
 
-static struct gpio_led quanta_leds[] = {
+static struct gpio_led turing_leds[] = {
 		GPIO_LED(GPIO14, LEDS_GPIO_DEFSTATE_ON, "led1"),
 		GPIO_LED(GPIO15, LEDS_GPIO_DEFSTATE_ON, "led2"),
 		GPIO_LED(GPIO16, LEDS_GPIO_DEFSTATE_ON, "led3"),
@@ -410,42 +410,45 @@ static struct gpio_led quanta_leds[] = {
 		GPIO_LED(GPIO18, LEDS_GPIO_DEFSTATE_ON, "led5"),
 };
 
-static struct gpio_led_platform_data quanta_leds_data = {
-		.leds = quanta_leds,
-		.num_leds = ARRAY_SIZE(quanta_leds),
+static struct gpio_led_platform_data turing_leds_data = {
+		.leds = turing_leds,
+		.num_leds = ARRAY_SIZE(turing_leds),
 };
 
-static struct platform_device quanta_leds_device = {
+static struct platform_device turing_leds_device = {
 	.name		= "leds-gpio",
 	.id		= -1,
 	.num_resources  = 0,
 	.dev		= {
-		.platform_data = &quanta_leds_data,
+		.platform_data = &turing_leds_data,
 	}
 };
 
 static struct fb_videomode video_modes[] = {
-	{
-	 /* 800x480 @ 57 Hz , pixel clk @ 27MHz */
-	 "CLAA-WVGA", 57, 800, 480, 37037, 40, 60, 10, 10, 20, 10,
-	 FB_SYNC_CLK_LAT_FALL,
-	 FB_VMODE_NONINTERLACED,
-	 0,},
-	{
-	 /* 800x480 @ 60 Hz , pixel clk @ 32MHz */
-	 "SEIKO-WVGA", 60, 800, 480, 29850, 89, 164, 23, 10, 10, 10,
-	 FB_SYNC_CLK_LAT_FALL,
-	 FB_VMODE_NONINTERLACED,
-	 0,},
-	{
-	/* 1600x1200 @ 60 Hz 162M pixel clk*/
-	"UXGA", 60, 1600, 1200, 6172,
-	304, 64,
-	1, 46,
-	192, 3,
-	FB_SYNC_HOR_HIGH_ACT|FB_SYNC_VERT_HIGH_ACT,
-	FB_VMODE_NONINTERLACED,
-	0,},
+		{
+			 /* 800x480 @ 57 Hz , pixel clk @ 27MHz */
+			 "CLAA-WVGA", 57, 800, 480, 37037, 40, 60, 10, 10, 20, 10,
+			 FB_SYNC_CLK_LAT_FALL,
+			 FB_VMODE_NONINTERLACED,
+			 0,
+		},
+		{
+			 /* 800x480 @ 60 Hz , pixel clk @ 32MHz */
+			 "SEIKO-WVGA", 60, 800, 480, 29850, 89, 164, 23, 10, 10, 10,
+			 FB_SYNC_CLK_LAT_FALL,
+			 FB_VMODE_NONINTERLACED,
+			 0,
+		},
+		{
+			/* 1600x1200 @ 60 Hz 162M pixel clk*/
+			"UXGA", 60, 1600, 1200, 6172,
+			304, 64,
+			1, 46,
+			192, 3,
+			FB_SYNC_HOR_HIGH_ACT|FB_SYNC_VERT_HIGH_ACT,
+			FB_VMODE_NONINTERLACED,
+			0,
+		},
 };
 
 static struct platform_pwm_backlight_data mxc_pwm_backlight_data = {
@@ -466,10 +469,6 @@ static struct mxc_vpu_platform_data mxc_vpu_data = {
 	.iram_enable = true,
 	.iram_size = 0x14000,
 	.reset = mx5_vpu_reset,
-};
-
-static struct fec_platform_data fec_data = {
-	.phy = PHY_INTERFACE_MODE_RMII,
 };
 
 static struct mxc_dvfs_platform_data dvfs_core_data = {
@@ -541,18 +540,18 @@ static struct resource mxcfb_resources[] = {
 };
 
 static struct mxc_fb_platform_data fb_data[] = {
-	{
-	 .interface_pix_fmt = IPU_PIX_FMT_RGB565,
-	 .mode_str = "CLAA-WVGA",
-	 .mode = video_modes,
-	 .num_modes = ARRAY_SIZE(video_modes),
-	 },
-	{
-	 .interface_pix_fmt = IPU_PIX_FMT_GBR24,
-	 .mode_str = "VGA-XGA",
-	 .mode = video_modes,
-	 .num_modes = ARRAY_SIZE(video_modes),
-	 },
+		{
+			 .interface_pix_fmt = IPU_PIX_FMT_RGB565,
+			 .mode_str = "CLAA-WVGA",
+			 .mode = video_modes,
+			 .num_modes = ARRAY_SIZE(video_modes),
+		},
+		{
+			 .interface_pix_fmt = IPU_PIX_FMT_RGB24,
+			 .mode_str = "1024x768M-16@60",
+			 .mode = video_modes,
+			 .num_modes = ARRAY_SIZE(video_modes),
+		 },
 };
 
 extern int primary_di;
@@ -560,10 +559,9 @@ extern int primary_di;
 static int __init
 mxc_init_fb(void)
 {
-	if (!machine_is_mx53_quanta())
+	if (!machine_is_mx53_turing())
 		return 0;
 
-	/*for quanta board, set default display as VGA*/
 	if (primary_di < 0)
 		primary_di = 1;
 
@@ -608,9 +606,9 @@ static void sii902x_hdmi_reset(void)
 static int sii902x_get_pins(void)
 {
 	/* Sii902x HDMI controller */
-	gpio_request(GPIO24, "disp0-reset");
+	gpio_request(GPIO24, "hdmi-reset");
 	gpio_direction_output(GPIO24, 0);
-	gpio_request(GPIO23, "disp0-detect");
+	gpio_request(GPIO23, "hdmi-detect");
 	gpio_direction_input(GPIO23);
 	return 1;
 }
@@ -623,9 +621,10 @@ static void sii902x_put_pins(void)
 
 static struct mxc_lcd_platform_data sii902x_hdmi_data = {
 	.reset = sii902x_hdmi_reset,
-	.fb_id = "DISP3 BG",
+	.fb_id = "DISP3 BG - DI1",
 	.get_pins = sii902x_get_pins,
 	.put_pins = sii902x_put_pins,
+	.boot_enable = 1,
 };
 
 static struct imxi2c_platform_data mxci2c_data = {
@@ -740,7 +739,7 @@ static struct mxc_asrc_platform_data mxc_asrc_data = {
 	.clk_map_ver = 2,
 };
 
-static void mx53_quanta_otghost_vbus(bool on)
+static void mx53_turing_otghost_vbus(bool on)
 {
 	if (on)
 		gpio_set_value(OTG_PWR_EN, 1);
@@ -868,20 +867,20 @@ fixup_mxc_board(struct machine_desc *desc, struct tag *tags, char **cmdline, str
 	}
 }
 
-static void mx53_quanta_power_off(void)
+static void mx53_turing_power_off(void)
 {
 	pr_info("Power off!\n");
 
-	if(!board_is_mx53_quanta_mc34708())
+	if(!board_is_mx53_turing_mc34708())
 	{
 		da9053_power_off();
 	}
 }
 
 static void __init
-mx53_quanta_io_init(void)
+mx53_turing_io_init(void)
 {
-	mxc_iomux_v3_setup_multiple_pads(mx53_quanta_pads, ARRAY_SIZE(mx53_quanta_pads));
+	mxc_iomux_v3_setup_multiple_pads(mx53_turing_pads, ARRAY_SIZE(mx53_turing_pads));
 
 	/* SD1 */
 	gpio_request(SD_CD, "SD_CD");
@@ -898,8 +897,8 @@ mx53_quanta_io_init(void)
 	gpio_direction_output(GPIO1, 1);
 
 	/* PMIC_INT */
-	gpio_request(QUANTA_SOM_PMIC_INT, "PMIC_INT");
-	gpio_direction_input(QUANTA_SOM_PMIC_INT);
+	gpio_request(TURING_SOM_PMIC_INT, "PMIC_INT");
+	gpio_direction_input(TURING_SOM_PMIC_INT);
 
 	/* HEADPHONE_DET */
 	gpio_request(GPIO25, "HEADPHONE_DET");
@@ -930,12 +929,12 @@ mxc_board_init(void)
 	/*
 	 *ssi_ext1_clk was enbled in arch/arm/mach-mx5/clock.c, and it was kept
 	 *open to provide clock for audio codec on i.Mx53 Quickstart, but MX53
-	 *QUANTA board have no needs to do that, so we close it here
+	 *TURING board have no needs to do that, so we close it here
 	 */
 	clk_disable(mxc_ipu_data.csi_clk[0]);
 
 	mxc_cpu_common_init();
-	mx53_quanta_io_init();
+	mx53_turing_io_init();
 
 	mxcsdhc1_device.resource[2].start = gpio_to_irq(SD_CD);
 	mxcsdhc1_device.resource[2].end = gpio_to_irq(SD_CD);
@@ -949,18 +948,18 @@ mxc_board_init(void)
 
 	mxc_register_device(&mx5_pmu_device, NULL);
 
-	if (board_is_mx53_quanta_mc34708()) {
-		pr_info("MX53-QUANTA v1.0 - CPU Rev B. MC34708\n");
+	if (board_is_mx53_turing_mc34708()) {
+		pr_info("MX53-TURING EVB v1.0 - CPU Rev B. MC34708\n");
 		// PMIC MC34708
-		mx53_quanta_init_mc34708();
+		mx53_turing_init_mc34708();
 		dvfs_core_data.reg_id = "SW1A";
 		bus_freq_data.gp_reg_id = "SW1A";
 		bus_freq_data.lp_reg_id = "SW2";
 		mxc_register_device(&mxc_powerkey_device, &pwrkey_data);
 	} else {
-		pr_info("MX53-QUANTA EVB v1.0 - CPU Rev D. DA9053\n");
+		pr_info("MX53-TURING EVB v1.0 - CPU Rev D. DA9053\n");
 		// PMIC DA9053
-		mx53_quanta_init_da9052();
+		mx53_turing_init_da9052();
 		dvfs_core_data.reg_id = "DA9052_BUCK_CORE";
 		bus_freq_data.gp_reg_id = "DA9052_BUCK_CORE";
 		bus_freq_data.lp_reg_id = "DA9052_BUCK_PRO";
@@ -976,7 +975,7 @@ mxc_board_init(void)
 		mxc_register_device(&gpu_device, &gpu_data);
 
 	mxc_register_device(&mxcscc_device, NULL);
-	mxc_register_device(&pm_device, &quanta_pm_data);
+	mxc_register_device(&pm_device, &turing_pm_data);
 	mxc_register_device(&mxc_dvfs_core_device, &dvfs_core_data);
 	mxc_register_device(&busfreq_device, &bus_freq_data);
 	mxc_register_device(&mxc_iim_device, &iim_data);
@@ -989,7 +988,6 @@ mxc_board_init(void)
 	mxc_register_device(&mxc_ssi2_device, NULL);
 	mxc_register_device(&ahci_fsl_device, &sata_data);
 	mxc_register_device(&imx_ahci_device_hwmon, NULL);
-	mxc_register_device(&mxc_fec_device, &fec_data);
 	mxc_register_device(&mxc_ptp_device, NULL);
 
 	/* ASRC is only available for MX53 TO2.0 */
@@ -1010,20 +1008,20 @@ mxc_board_init(void)
 	mxc_register_device(&mxc_sgtl5000_device, &sgtl5000_data);
 
 	mx5_usb_dr_init();
-	mx5_set_otghost_vbus_func(mx53_quanta_otghost_vbus);
+	mx5_set_otghost_vbus_func(mx53_turing_otghost_vbus);
 	mx5_usbh1_init();
 	mxc_register_device(&mxc_v4l2_device, NULL);
 	mxc_register_device(&mxc_v4l2out_device, NULL);
 
-	platform_device_register(&quanta_button_device);
-	platform_device_register(&quanta_leds_device);
+	platform_device_register(&turing_button_device);
+	platform_device_register(&turing_leds_device);
 
-	pm_power_off = mx53_quanta_power_off;
+	pm_power_off = mx53_turing_power_off;
 	pm_i2c_init(I2C1_BASE_ADDR - MX53_OFFSET);
 }
 
 static void __init
-mx53_quanta_timer_init(void)
+mx53_turing_timer_init(void)
 {
 	struct clk *uart_clk;
 
@@ -1034,14 +1032,14 @@ mx53_quanta_timer_init(void)
 }
 
 static struct sys_timer mxc_timer = {
-	.init	= mx53_quanta_timer_init,
+	.init	= mx53_turing_timer_init,
 };
 
 /*
  * The following uses standard kernel macros define in arch.h in order to
- * initialize __mach_desc_MX53_QUANTA data structure.
+ * initialize __mach_desc_MX53_TURING data structure.
  */
-MACHINE_START(MX53_QUANTA, "MX53 QUANTA Board")
+MACHINE_START(MX53_TURING, "MX53 TURING Board")
 	/* Maintainer: Turing Computer */
 	.fixup = fixup_mxc_board,
 	.map_io = mx5_map_io,

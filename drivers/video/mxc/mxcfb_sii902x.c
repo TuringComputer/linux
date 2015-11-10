@@ -1104,8 +1104,43 @@ static int __devinit sii902x_probe(struct i2c_client *client,
 
 	sii902x->power_state = TX_POWER_STATE_D2;
 	sii902x->icolor_space = RGB;
-	sii902x->audio_mode = AMODE_SPDIF;
-	sii902x->audio_channels = ACHANNEL_2CH;
+	// Turing: I2S or SPDIF
+	if(plat->audio_mode == AUDIO_MODE_I2S)
+	{
+		sii902x->audio_mode = AMODE_I2S;
+	}
+	else
+	{
+		sii902x->audio_mode = AMODE_SPDIF;
+	}
+	// Turing: Number of channels
+	switch(plat->audio_channels)
+	{
+		case AUDIO_CHANNEL_2CH:
+			sii902x->audio_channels = ACHANNEL_2CH;
+			break;
+		case AUDIO_CHANNEL_3CH:
+			sii902x->audio_channels = ACHANNEL_3CH;
+			break;
+		case AUDIO_CHANNEL_4CH:
+			sii902x->audio_channels = ACHANNEL_4CH;
+			break;
+		case AUDIO_CHANNEL_5CH:
+			sii902x->audio_channels = ACHANNEL_5CH;
+			break;
+		case AUDIO_CHANNEL_6CH:
+			sii902x->audio_channels = ACHANNEL_6CH;
+			break;
+		case AUDIO_CHANNEL_7CH:
+			sii902x->audio_channels = ACHANNEL_7CH;
+			break;
+		case AUDIO_CHANNEL_8CH:
+			sii902x->audio_channels = ACHANNEL_8CH;
+			break;
+		default:
+			sii902x->audio_channels = ACHANNEL_2CH;
+			break;
+	}
 
 	sii902x->pdev = platform_device_register_simple("sii902x", 0, NULL, 0);
 	if (IS_ERR(sii902x->pdev)) {

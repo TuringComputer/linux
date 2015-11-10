@@ -94,7 +94,7 @@ extern unsigned int system_rev;
 #ifdef CONFIG_ARCH_MX5
 #define board_is_mx53_loco_mc34708() \
   (cpu_is_mx53() &&  (board_is_rev(BOARD_REV_2) || board_is_rev(BOARD_REV_4)))
-#define board_is_mx53_quanta_mc34708() \
+#define board_is_mx53_turing_mc34708() \
   (cpu_is_mx53() &&  (board_is_rev(BOARD_REV_2)))
 /*BOARD_REV_2: revA,BOARD_REV_4: revB*/
 #define board_is_mx53_arm2()  (cpu_is_mx53() && board_is_rev(BOARD_REV_2))

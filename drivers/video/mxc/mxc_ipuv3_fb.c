@@ -474,8 +474,18 @@ static int mxcfb_set_par(struct fb_info *fbi)
 		if (fbi->var.sync & FB_SYNC_CLK_IDLE_EN)
 			sig_cfg.clkidle_en = true;
 
-		dev_dbg(fbi->device, "pixclock = %ul Hz\n",
-			(u32) (PICOS2KHZ(fbi->var.pixclock) * 1000UL));
+		dev_info(fbi->device, "ipu_init_sync_panel:\n");
+		dev_info(fbi->device, "mxc_fbi->ipu_di = %d\n", mxc_fbi->ipu_di);
+		dev_info(fbi->device, "fbi->var.pixclock = %d\n", fbi->var.pixclock);
+		dev_info(fbi->device, "fbi->var.xres = %d\n", fbi->var.xres);
+		dev_info(fbi->device, "fbi->var.yres = %d\n", fbi->var.yres);
+		dev_info(fbi->device, "out_pixel_fmt = %d\n", out_pixel_fmt);
+		dev_info(fbi->device, "fbi->var.left_margin = %d\n", fbi->var.left_margin);
+		dev_info(fbi->device, "fbi->var.hsync_len = %d\n", fbi->var.hsync_len);
+		dev_info(fbi->device, "fbi->var.right_margin = %d\n", fbi->var.right_margin);
+		dev_info(fbi->device, "fbi->var.upper_margin = %d\n", fbi->var.upper_margin);
+		dev_info(fbi->device, "fbi->var.vsync_len = %d\n", fbi->var.vsync_len);
+		dev_info(fbi->device, "fbi->var.lower_margin = %d\n", fbi->var.lower_margin);
 
 		if (ipu_init_sync_panel(mxc_fbi->ipu_di,
 					(PICOS2KHZ(fbi->var.pixclock)) * 1000UL,
@@ -487,9 +497,9 @@ static int mxcfb_set_par(struct fb_info *fbi)
 					fbi->var.upper_margin,
 					fbi->var.vsync_len,
 					fbi->var.lower_margin,
-					0, sig_cfg) != 0) {
-			dev_err(fbi->device,
-				"mxcfb: Error initializing panel.\n");
+					0, sig_cfg) != 0)
+		{
+			dev_err(fbi->device, "mxcfb: Error initializing panel.\n");
 			return -EINVAL;
 		}
 
@@ -1253,11 +1263,16 @@ static int mxcfb_blank(int blank, struct fb_info *info)
 	case FB_BLANK_VSYNC_SUSPEND:
 	case FB_BLANK_HSYNC_SUSPEND:
 	case FB_BLANK_NORMAL:
+        dev_info(info->device, "blanking framebuffer\n");
 		ipu_disable_channel(mxc_fbi->ipu_ch, true);
-		ipu_uninit_sync_panel(mxc_fbi->ipu_di);
-		ipu_uninit_channel(mxc_fbi->ipu_ch);
+        dev_info(info->device, "mxc_fbi->ipu_di = %d.\n", mxc_fbi->ipu_di);
+		if (mxc_fbi->ipu_di >= 0) {
+            ipu_uninit_sync_panel(mxc_fbi->ipu_di);
+        }
+        ipu_uninit_channel(mxc_fbi->ipu_ch);
 		break;
 	case FB_BLANK_UNBLANK:
+   	    dev_info(info->device, "unblanking framebuffer\n");
 		mxcfb_set_par(info);
 		break;
 	}
@@ -1964,6 +1979,8 @@ static int mxcfb_probe(struct platform_device *pdev)
 	fb_prepare_logo(fbi, 0);
 	fb_show_logo(fbi, 0);
 #endif
+
+    dev_info(&pdev->dev, "driver probed\n");
 
 	return 0;
 err3:

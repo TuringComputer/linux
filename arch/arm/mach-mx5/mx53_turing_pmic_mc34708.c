@@ -30,7 +30,7 @@
 #include <mach/iomux-mx53.h>
 #include <mach/gpio.h>
 #include "pmic.h"
-#include "mx53_quanta.h"
+#include "mx53_turing.h"
 
 /*
  * Convenience conversion.
@@ -317,13 +317,13 @@ static struct mc34708_platform_data mc34708_plat = {
 static struct i2c_board_info __initdata mc34708_i2c_device = {
 	I2C_BOARD_INFO(MC34708_I2C_DEVICE_NAME, MC34708_I2C_ADDR),
 	.platform_data = &mc34708_plat,
-	.irq = gpio_to_irq(QUANTA_SOM_PMIC_INT),
+	.irq = gpio_to_irq(TURING_SOM_PMIC_INT),
 };
 
 int __init
-mx53_quanta_init_mc34708(void)
+mx53_turing_init_mc34708(void)
 {
 	/* Set interrupt as LOW LEVEL interrupt source */
-	set_irq_type(gpio_to_irq(QUANTA_SOM_PMIC_INT), IRQF_TRIGGER_LOW);
+	set_irq_type(gpio_to_irq(TURING_SOM_PMIC_INT), IRQF_TRIGGER_LOW);
 	return i2c_register_board_info(0, &mc34708_i2c_device, 1);
 }

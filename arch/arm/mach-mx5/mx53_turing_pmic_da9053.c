@@ -18,7 +18,7 @@
 
 
 /*
- * mx53_quanta_pmic_da9053.c  --  i.MX53 QUANTA driver for PMIC da9053
+ * mx53_turing_pmic_da9053.c  --  i.MX53 TURING driver for PMIC da9053
  */
 
 #include <linux/module.h>
@@ -37,7 +37,7 @@
 #include <mach/iomux-mx53.h>
 #include <mach/gpio.h>
 #include "pmic.h"
-#include "mx53_quanta.h"
+#include "mx53_turing.h"
 
 #define DA9052_LDO(max, min, rname, suspend_mv) \
 {\
@@ -222,13 +222,13 @@ static void da9052_init_ssc_cache(struct da9052 *da9052)
 }
 
 static int __init
-quanta_da9052_init(struct da9052 *da9052)
+turing_da9052_init(struct da9052 *da9052)
 {
 	/* Configuring for DA9052 interrupt servce */
 	/* s3c_gpio_setpull(DA9052_IRQ_PIN, S3C_GPIO_PULL_UP);*/
 
 	/* Set interrupt as LOW LEVEL interrupt source */
-	set_irq_type(gpio_to_irq(QUANTA_SOM_PMIC_INT), IRQF_TRIGGER_LOW);
+	set_irq_type(gpio_to_irq(TURING_SOM_PMIC_INT), IRQF_TRIGGER_LOW);
 
 	da9052_init_ssc_cache(da9052);
 
@@ -236,7 +236,7 @@ quanta_da9052_init(struct da9052 *da9052)
 }
 
 static struct da9052_platform_data __initdata da9052_plat = {
-	.init = quanta_da9052_init,
+	.init = turing_da9052_init,
 	.num_regulators = ARRAY_SIZE(da9052_regulators_init),
 	.regulators = da9052_regulators_init,
 	.led_data = &da9052_gpio_leds,
@@ -248,11 +248,11 @@ static struct da9052_platform_data __initdata da9052_plat = {
 
 static struct i2c_board_info __initdata da9052_i2c_device = {
 	I2C_BOARD_INFO(DA9052_SSC_I2C_DEVICE_NAME, DA9052_I2C_ADDR >> 1),
-	.irq = gpio_to_irq(QUANTA_SOM_PMIC_INT),
+	.irq = gpio_to_irq(TURING_SOM_PMIC_INT),
 	.platform_data = &da9052_plat,
 };
 
-int __init mx53_quanta_init_da9052(void)
+int __init mx53_turing_init_da9052(void)
 {
 	return i2c_register_board_info(0, &da9052_i2c_device, 1);
 }

@@ -316,6 +316,19 @@ struct mxc_lcd_platform_data {
 	void (*disable_pins) (void);
 	char *fb_id;
 	int boot_enable;
+	// Turing - I2S or SPDIF for HDMI
+#define AUDIO_MODE_SPDIF             0
+#define AUDIO_MODE_I2S               1
+	int audio_mode;
+	// Turing - Number of Channels
+#define AUDIO_CHANNEL_2CH            0
+#define AUDIO_CHANNEL_3CH            1
+#define AUDIO_CHANNEL_4CH            2
+#define AUDIO_CHANNEL_5CH            3
+#define AUDIO_CHANNEL_6CH            4
+#define AUDIO_CHANNEL_7CH            5
+#define AUDIO_CHANNEL_8CH            6
+	int audio_channels;
 };
 
 struct mxc_ddc_platform_data {
