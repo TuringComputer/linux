@@ -3257,4 +3257,6 @@ armadillo460		MACH_ARMADILLO460	ARMADILLO460		3270
 lq2			MACH_LQ2		LQ2			3271
 sweda_tms2		MACH_SWEDA_TMS2		SWEDA_TMS2		3272
 mx53_loco		MACH_MX53_LOCO		MX53_LOCO		3273
-mx53_turing             MACH_MX53_TURING        MX53_TURING             3274
+mx53_turing             MACH_MX53_TURING        MX53_TURING             5064
+mx6q_turing             MACH_MX6Q_TURING        MX6Q_TURING             5065
+mx6dl_turing            MACH_MX6DL_TURING       MX6DL_TURING            5066

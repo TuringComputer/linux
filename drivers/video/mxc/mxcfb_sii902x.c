@@ -1243,6 +1243,7 @@ static int __devinit sii902x_probe(struct i2c_client *client,
 	else
 	{
 		sii902x->audio_mode = AMODE_SPDIF;
+		sii902x->audio_channels = ACHANNEL_2CH;
 		dev_info(&sii902x->client->dev, "SPDIF enabled\n");
 	}
 

@@ -327,7 +327,7 @@ struct mxc_lcd_platform_data {
 	int audio_mclk;
 	//		Word Length (bits, from 16 to 24)
 	int audio_word_len;
-	//		Sample Frequency (in Hz)
+	//		Sampling Frequency (in Hz)
 	int audio_fs;
 };
 
