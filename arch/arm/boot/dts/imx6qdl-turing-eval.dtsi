@@ -111,7 +111,7 @@
 	
 	sound {
 		compatible = "fsl,imx-audio-sgtl5000";
-		model = "imx6x-quanta-sgtl5000";
+		model = "imx6x-turing-sgtl5000";
 		ssi-controller = <&ssi2>;
 		audio-codec = <&sgtl5000>;
 		audio-routing =
@@ -198,7 +198,7 @@
 	fsl,spi-num-chipselects = <1>;
 	cs-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
 
-	flash: m25p32@1 {
+	flash: m25p32@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "st,m25p32", "st,m25p";
@@ -209,7 +209,6 @@
 		partition@0 {
 			label = "U-Boot";
 			reg = <0x0 0x40000>;
-			read-only;
 		};
 
 		partition@40000 {
