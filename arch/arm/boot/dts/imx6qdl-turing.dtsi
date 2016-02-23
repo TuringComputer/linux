@@ -1,7 +1,8 @@
 /*
- * Copyright (C) 2015 Quanta Tecnologia Eletronica, LTDA.
+ * Copyright (C) 2016 Turing Computer.
  */
 
+#include "imx6qdl.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -16,9 +17,13 @@
 			regulator-name = "usb_otg_vbus";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
-			gpio = <&gpio3 2 2>;
+			gpio = <&gpio3 22 0x2>;
 			enable-active-high;
 		};
+	};
+	
+	memory {
+		reg = <0x10000000 0x40000000>;
 	};
 
 	lcd@0 {
@@ -57,7 +62,8 @@
 &iomuxc {
 	pinctrl-names = "default";
 
-	quanta {
+	imx6qdl-quanta {
+	
 		pinctrl_uart1: pinmux-uart1 {
 			fsl,pins = <
 				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
@@ -263,7 +269,55 @@
 				MX6QDL_PAD_CSI0_VSYNC__IPU1_CSI0_VSYNC     0x80000000
 			>;
 		};
-
+		
+		pinctrl_spdif: pinmux-spdif {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_19__SPDIF_OUT 				0x13091
+			>;
+		};
+		
+		pinctrl_gpio: pinmux-gpio { /* GPIO */
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_8__GPIO1_IO08 				0x80000000		/* GPIO00 PIN 045 as GPIO(1, 8)    */
+				MX6QDL_PAD_EIM_D20__GPIO3_IO20 				0x80000000		/* GPIO01 PIN 092 as GPIO(3, 20)   */
+				MX6QDL_PAD_ENET_MDIO__GPIO1_IO22			0x80000000		/* GPIO02 PIN 043 as GPIO(1, 22)   */
+				MX6QDL_PAD_ENET_TXD0__GPIO1_IO30			0x80000000		/* GPIO03 PIN 142 as GPIO(1, 30)   */
+				MX6QDL_PAD_ENET_REF_CLK__GPIO1_IO23			0x80000000		/* GPIO04 PIN 110 as GPIO(1, 23)   */
+				MX6QDL_PAD_ENET_TXD1__GPIO1_IO29			0x80000000		/* GPIO05 PIN 047 as GPIO(1, 29)   */
+				MX6QDL_PAD_EIM_D29__GPIO3_IO29 				0x80000000		/* GPIO06 PIN 121 as GPIO(3, 29)   */
+				MX6QDL_PAD_ENET_RXD0__GPIO1_IO27			0x80000000		/* GPIO07 PIN 160 as GPIO(1, 27)   */
+				MX6QDL_PAD_EIM_A25__GPIO5_IO02 				0x80000000		/* GPIO08 PIN 001 as GPIO(5, 2)    */
+				MX6QDL_PAD_ENET_MDC__GPIO1_IO31				0x80000000		/* GPIO09 PIN 139 as GPIO(1, 31)   */
+				MX6QDL_PAD_NANDF_CS1__GPIO6_IO14			0x80000000		/* GPIO10 PIN 017 as GPIO(6, 14)   */
+				MX6QDL_PAD_NANDF_CS3__GPIO6_IO16			0x80000000		/* GPIO11 PIN 117 as GPIO(6, 16)   */
+				MX6QDL_PAD_NANDF_D1__GPIO2_IO01				0x80000000		/* GPIO12 PIN 140 as GPIO(2, 1)    */
+				MX6QDL_PAD_NANDF_D2__GPIO2_IO02				0x80000000		/* GPIO13 PIN 134 as GPIO(2, 2)    */
+				MX6QDL_PAD_NANDF_D3__GPIO2_IO03				0x80000000		/* GPIO14 PIN 162 as GPIO(2, 3)    */
+				MX6QDL_PAD_NANDF_D4__GPIO2_IO04				0x80000000		/* GPIO15 PIN 122 as GPIO(2, 4)    */
+				MX6QDL_PAD_NANDF_D5__GPIO2_IO05				0x80000000		/* GPIO16 PIN 157 as GPIO(2, 5)    */
+				MX6QDL_PAD_NANDF_CLE__GPIO6_IO07			0x80000000		/* GPIO17 PIN 141 as GPIO(6, 7)    */
+				MX6QDL_PAD_SD3_RST__GPIO7_IO08 				0x80000000		/* GPIO18 PIN 149 as GPIO(7, 8)    */
+				MX6QDL_PAD_NANDF_WP_B__GPIO6_IO09			0x80000000		/* GPIO19 PIN 124 as GPIO(6, 9)    */
+				MX6QDL_PAD_NANDF_CS0__GPIO6_IO11			0x80000000		/* GPIO20 PIN 146 as GPIO(6, 11)   */
+				MX6QDL_PAD_NANDF_RB0__GPIO6_IO10			0x80000000		/* GPIO21 PIN 148 as GPIO(6, 10)   */
+				MX6QDL_PAD_SD3_DAT6__GPIO6_IO18				0x80000000		/* GPIO22 PIN 133 as GPIO(6, 18)   */
+				MX6QDL_PAD_SD3_DAT4__GPIO7_IO01				0x80000000		/* GPIO23 PIN 119 as GPIO(7, 1)    */
+				MX6QDL_PAD_GPIO_17__GPIO7_IO12 				0x80000000		/* GPIO24 PIN 163 as GPIO(7, 12)   */
+				MX6QDL_PAD_SD3_DAT5__GPIO7_IO00				0x80000000		/* GPIO25 PIN 164 as GPIO(7, 0)    */
+				MX6QDL_PAD_SD3_DAT7__GPIO6_IO17				0x80000000		/* GPIO26 PIN 147 as GPIO(6, 17)   */
+				MX6QDL_PAD_EIM_D28__GPIO3_IO28 				0x80000000		/* GPIO27 PIN 159 as GPIO(3, 28)   */
+				
+				MX6QDL_PAD_DI0_PIN4__GPIO4_IO20				0x80000000		/* SDIO1 WP PIN 077 as GPIO(4, 20) */
+				MX6QDL_PAD_NANDF_D0__GPIO2_IO00				0x80000000		/* SDIO1 CD PIN 120 as GPIO(2, 0)  */
+				
+				MX6QDL_PAD_GPIO_18__GPIO7_IO13 				0x80000000		/* PMIC INT as GPIO(7, 13)         */
+				MX6QDL_PAD_EIM_D30__GPIO3_IO30 				0x80000000		/* TOUCHSCREEN INT as GPIO(3, 30)  */
+				MX6QDL_PAD_EIM_D22__GPIO3_IO22 				0x80000000		/* OTG VBUS PWR EN as GPIO(3, 22)  */
+				
+				MX6QDL_PAD_EIM_D19__GPIO3_IO19 				0x80000000		/* SPI0_SS1 PIN 158 as GPIO(3, 19)   */
+				MX6QDL_PAD_EIM_LBA__GPIO2_IO27 				0x80000000		/* SPI1_SS1 PIN 145 as GPIO(2, 27)   */
+			>;
+		};
 	};
 };
 
@@ -297,8 +351,8 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1>;
 	bus-width = <4>;
-	cd-gpios = <&gpio1 0 1>;
-	wp-gpios = <&gpio4 2 0>;
+	cd-gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
+	wp-gpios = <&gpio4 20 GPIO_ACTIVE_LOW>;
 	no-1-8-v;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;
@@ -353,6 +407,7 @@
 };
 
 &i2c1 {
+	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1>;
 	status = "okay";
@@ -364,17 +419,11 @@
 	pinctrl-0 = <&pinctrl_i2c2>;
 	status = "okay";
 
-	max11801@48 {
-		compatible = "maxim,max11801";
-		reg = <0x48>;
-		interrupt-parent = <&gpio3>;
-		interrupts = <30 2>;
-		work-mode = <1>;/*DCM mode*/
-	};
-
 	pmic: pfuze100@08 {
 		compatible = "fsl,pfuze100";
 		reg = <0x08>;
+		interrupt-parent = <&gpio7>;
+		interrupts = <13 0x8>;
 
 		regulators {
 			sw1a_reg: sw1ab {
@@ -394,29 +443,29 @@
 			};
 
 			sw2_reg: sw2 {
-				regulator-min-microvolt = <800000>;
+				regulator-min-microvolt = <3000000>;
 				regulator-max-microvolt = <3300000>;
 				regulator-boot-on;
 				regulator-always-on;
 			};
 
 			sw3a_reg: sw3a {
-				regulator-min-microvolt = <400000>;
-				regulator-max-microvolt = <1975000>;
+				regulator-min-microvolt = <1250000>;
+				regulator-max-microvolt = <1500000>;
 				regulator-boot-on;
 				regulator-always-on;
 			};
 
 			sw3b_reg: sw3b {
-				regulator-min-microvolt = <400000>;
-				regulator-max-microvolt = <1975000>;
+				regulator-min-microvolt = <1250000>;
+				regulator-max-microvolt = <1500000>;
 				regulator-boot-on;
 				regulator-always-on;
 			};
 
 			sw4_reg: sw4 {
-				regulator-min-microvolt = <800000>;
-				regulator-max-microvolt = <3300000>;
+				regulator-min-microvolt = <3000000>;
+				regulator-max-microvolt = <3150000>;
 			};
 
 			swbst_reg: swbst {
@@ -448,24 +497,24 @@
 
 			vgen3_reg: vgen3 {
 				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <3300000>;
+				regulator-max-microvolt = <2500000>;
 			};
 
 			vgen4_reg: vgen4 {
-				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <3300000>;
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <1800000>;
 				regulator-always-on;
 			};
 
 			vgen5_reg: vgen5 {
 				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <3300000>;
+				regulator-max-microvolt = <2800000>;
 				regulator-always-on;
 			};
 
 			vgen6_reg: vgen6 {
 				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <3300000>;
+				regulator-max-microvolt = <2800000>;
 				regulator-always-on;
 			};
 		};
@@ -473,9 +522,17 @@
 };
 
 &i2c3 {
+	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3>;
 	status = "okay";
+	
+	tsc2007@48 {
+		compatible = "ti,tsc2007";
+		reg = <0x48>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <30 0x2>;
+	};
 };
 
 &audmux {
@@ -497,5 +554,55 @@
 };
 
 &wdog2 {
+	status = "okay";
+};
+
+&pcie {
+	status = "okay";
+};
+
+&ssi2 {
+	fsl,mode = "i2s-slave";
+	status = "okay";
+};
+
+&dcic1 {
+	dcic_id = <0>;
+	dcic_mux = "dcic-lcdif1";
+	status = "okay";
+};
+
+&dcic2 {
+	dcic_id = <1>;
+	dcic_mux = "dcic-lvds";
+	status = "okay";
+};
+
+&ldb {
+	lvds-channel@0 {
+		crtc = "ipu1-di0";
+	};
+};
+
+&cpu0 {
+	arm-supply = <&sw1a_reg>;
+	soc-supply = <&sw1c_reg>;
+};
+
+&ecspi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi1>;
+	status = "okay";
+};
+
+&ecspi2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi2>;
+	status = "okay";
+};
+
+&spdif {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_spdif>;
 	status = "okay";
 };

@@ -1,0 +1,28 @@
+/*
+ * Copyright (C) 2016 Turing Computer.
+ */
+/dts-v1/;
+
+#include "imx6q-turing.dtsi"
+#include "imx6qdl-turing-eval.dtsi"
+
+/ {
+	model = "Turing i.MX6 Evaluation Board Dual/Quad";
+	compatible = "turing,imx6q-turing", "fsl,imx6q";
+};
+
+&mxcfb1 {
+	status = "okay";
+};
+
+&mxcfb2 {
+	status = "okay";
+};
+
+&mxcfb3 {
+	status = "okay";
+};
+
+&mxcfb4 {
+	status = "okay";
+};

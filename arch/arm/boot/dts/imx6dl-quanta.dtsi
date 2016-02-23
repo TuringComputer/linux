@@ -1,6 +1,0 @@
-/*
- * Copyright (C) 2015 Quanta Tecnologia Eletronica, LTDA.
- */
-
-#include "imx6dl.dtsi"
-#include "imx6qdl-quanta.dtsi"

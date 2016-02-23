@@ -1,0 +1,225 @@
+/*
+ * Copyright (C) 2016 Turing Computer.
+ */
+
+#include "imx6qdl-turing.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	aliases {
+		mxcfb0 = &mxcfb1;
+		mxcfb1 = &mxcfb2;
+		mxcfb2 = &mxcfb3;
+		mxcfb3 = &mxcfb4;
+	};
+	
+	mxcfb1: fb@0 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "ldb";
+		interface_pix_fmt = "RGB666";
+		default_bpp = <16>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "disabled";
+	};
+
+	mxcfb2: fb@1 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "hdmi";
+		interface_pix_fmt = "RGB24";
+		mode_str ="1920x1080M@60";
+		default_bpp = <24>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "disabled";
+	};
+
+	mxcfb3: fb@2 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "lcd";
+		interface_pix_fmt = "RGB565";
+		mode_str ="CLAA-WVGA";
+		default_bpp = <16>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "disabled";
+	};
+
+	mxcfb4: fb@3 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "ldb";
+		interface_pix_fmt = "RGB666";
+		default_bpp = <16>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "disabled";
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+		
+		led1 {
+			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "none";
+		};
+		
+		led2 {
+			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "none";
+		};
+		
+		led3 {
+			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "none";
+		};
+		
+		led4 {
+			gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "none";
+		};
+		
+		led5 {
+			gpios = <&gpio7 8 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "none";
+		};
+	};
+	
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		home {
+			label = "Home Button";
+			gpios = <&gpio6 10 GPIO_ACTIVE_LOW>;
+			gpio-key,wakeup;
+			linux,code = <KEY_HOME>;
+		};
+
+		back {
+			label = "Back";
+			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
+			gpio-key,wakeup;
+			linux,code = <KEY_BACK>;
+		};
+
+		menu {
+			label = "Menu";
+			gpios = <&gpio6 9 GPIO_ACTIVE_LOW>;
+			gpio-key,wakeup;
+			linux,code = <KEY_MENU>;
+		};
+	};
+	
+	sound {
+		compatible = "fsl,imx-audio-sgtl5000";
+		model = "imx6x-quanta-sgtl5000";
+		ssi-controller = <&ssi2>;
+		audio-codec = <&sgtl5000>;
+		audio-routing =
+			"MIC_IN", "Mic Jack",
+			"Mic Jack", "Mic Bias",
+			"Headphone Jack", "HP_OUT";
+		mux-int-port = <2>;
+		mux-ext-port = <5>;
+	};
+	
+	sound-spdif {
+		compatible = "fsl,imx-audio-spdif";
+		model = "imx-spdif";
+		spdif-controller = <&spdif>;
+		spdif-out;
+	};
+
+	sii902x_reset: sii902x-reset {
+		compatible = "gpio-reset";
+		reset-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
+		reset-delay-us = <100000>;
+		#reset-cells = <0>;
+	};
+	
+	backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pwm1 0 5000000>;
+		brightness-levels = <0 4 8 16 32 64 128 255>;
+		default-brightness-level = <7>;
+		status = "okay";
+	};
+	
+	regulators {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg_usb_hub: regulator@1 {
+			compatible = "regulator-fixed";
+			reg = <1>;
+			regulator-name = "usb_hub_rst";
+			gpio = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+
+		reg_audio: regulator@2 {
+			compatible = "regulator-fixed";
+			reg = <2>;
+			regulator-name = "osc-ckih1-enable";
+			gpio = <&gpio6 7 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+		};
+	};
+};
+
+&i2c1 {
+	sgtl5000: codec@0a {
+		compatible = "fsl,sgtl5000";
+		reg = <0x0a>;
+		VDDA-supply = <&reg_audio>;
+		VDDIO-supply = <&reg_audio>;
+		status = "okay";
+	};
+};
+
+&i2c3 {
+	sii902x@39 {
+		compatible = "SiI,sii902x";
+		interrupt-parent = <&gpio7>;
+		interrupts = <7 0x2>;
+		mode_str ="1280x720M@60";
+		bits-per-pixel = <16>;
+		resets = <&sii902x_reset>;
+		reg = <0x39>;
+		status = "okay";
+	};
+};
+
+&usbh1 {
+	vbus-supply = <&reg_usb_hub>;
+};
+
+&ecspi1 {
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
+
+	flash: m25p32@1 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "st,m25p32", "st,m25p";
+		spi-max-frequency = <20000000>;
+		reg = <1>;
+		status = "okay";
+
+		partition@0 {
+			label = "U-Boot";
+			reg = <0x0 0x40000>;
+			read-only;
+		};
+
+		partition@40000 {
+			label = "Kernel";
+			reg = <0x40000 0x3c0000>;
+		};
+	};
+};
+
+&ecspi2 {
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio2 27 GPIO_ACTIVE_LOW>;
+};
