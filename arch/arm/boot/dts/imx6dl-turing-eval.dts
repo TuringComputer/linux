@@ -10,11 +10,3 @@
 	model = "Turing i.MX6 Evaluation Board Solo/Dual Lite";
 	compatible = "turing,imx6dl-turing", "fsl,imx6dl";
 };
-
-&mxcfb1 {
-	status = "okay";
-};
-
-&mxcfb2 {
-	status = "okay";
-};

@@ -10,19 +10,3 @@
 	model = "Turing i.MX6 Evaluation Board Dual/Quad";
 	compatible = "turing,imx6q-turing", "fsl,imx6q";
 };
-
-&mxcfb1 {
-	status = "okay";
-};
-
-&mxcfb2 {
-	status = "okay";
-};
-
-&mxcfb3 {
-	status = "okay";
-};
-
-&mxcfb4 {
-	status = "okay";
-};

@@ -9,8 +9,6 @@
 	aliases {
 		mxcfb0 = &mxcfb1;
 		mxcfb1 = &mxcfb2;
-		mxcfb2 = &mxcfb3;
-		mxcfb3 = &mxcfb4;
 	};
 	
 	clocks {
@@ -31,67 +29,57 @@
 		default_bpp = <16>;
 		int_clk = <0>;
 		late_init = <0>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	mxcfb2: fb@1 {
 		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "hdmi";
+		disp_dev = "lcd";
 		interface_pix_fmt = "RGB24";
 		mode_str ="1920x1080M@60";
 		default_bpp = <24>;
 		int_clk = <0>;
 		late_init = <0>;
-		status = "disabled";
-	};
-
-	mxcfb3: fb@2 {
-		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "lcd";
-		interface_pix_fmt = "RGB565";
-		mode_str ="CLAA-WVGA";
-		default_bpp = <16>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "disabled";
-	};
-
-	mxcfb4: fb@3 {
-		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "ldb";
-		interface_pix_fmt = "RGB666";
-		default_bpp = <16>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "disabled";
+		status = "okay"; 
 	};
 	
-	leds {
+	gpio-leds {
 		compatible = "gpio-leds";
+		status = "okay";
 		
-		led1 {
+		led@0 {
 			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "none";
+			default-state = "on";
+			label = "led1";
 		};
 		
-		led2 {
+		led@1 {
 			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "none";
+			default-state = "on";
+			label = "led2";
 		};
 		
-		led3 {
+		led@2 {
 			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "none";
+			default-state = "on";
+			label = "led3";
 		};
 		
-		led4 {
+		led@3 {
 			gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "none";
+			default-state = "on";
+			label = "led4";
 		};
 		
-		led5 {
+		led@4 {
 			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "none";
+			default-state = "on";
+			label = "led5";
 		};
 	};
 	
@@ -122,16 +110,17 @@
 	
 	sound {
 		compatible = "fsl,imx-audio-sgtl5000";
-		model = "imx6x-turing-sgtl5000";
-		ssi-controller = <&ssi3>;
-		cpu-dai = <&ssi3>;
-		audio-codec = <&sgtl5000>;
+		model = "imx-sgtl5000";
+		ssi-controller = <&ssi2>;
+		cpu-dai = <&ssi2>;
+		audio-codec = <&codec>;
 		audio-routing =
 			"MIC_IN", "Mic Jack",
 			"Mic Jack", "Mic Bias",
 			"Headphone Jack", "HP_OUT";
 		mux-int-port = <2>;
-		mux-ext-port = <5>;
+		mux-ext-port = <3>;
+		hp-det-gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
 	};
 	
 	sound-spdif {
@@ -187,7 +176,7 @@
 };
 
 &i2c1 {
-	sgtl5000: codec@0a {
+	codec: sgtl5000@0a {
 		compatible = "fsl,sgtl5000";
 		reg = <0x0a>;
 		clocks = <&audio_clk>;
