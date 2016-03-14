@@ -24,16 +24,6 @@
 	
 	mxcfb1: fb@0 {
 		compatible = "fsl,mxc_sdc_fb";
-		disp_dev = "ldb";
-		interface_pix_fmt = "RGB666";
-		default_bpp = <16>;
-		int_clk = <0>;
-		late_init = <0>;
-		status = "okay";
-	};
-
-	mxcfb2: fb@1 {
-		compatible = "fsl,mxc_sdc_fb";
 		disp_dev = "lcd";
 		interface_pix_fmt = "RGB24";
 		mode_str ="1920x1080M@60";
@@ -42,44 +32,49 @@
 		late_init = <0>;
 		status = "okay"; 
 	};
+
+	mxcfb2: fb@1 {
+		compatible = "fsl,mxc_sdc_fb";
+		disp_dev = "ldb";
+		interface_pix_fmt = "RGB666";
+		default_bpp = <16>;
+		int_clk = <0>;
+		late_init = <0>;
+		status = "okay";
+	};
 	
-	gpio-leds {
+	leds {
 		compatible = "gpio-leds";
 		status = "okay";
 		
-		led@0 {
+		led1 {
 			gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "none";
 			default-state = "on";
-			label = "led1";
+			linux,default-trigger = "none";
 		};
 		
-		led@1 {
+		led2 {
 			gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "none";
 			default-state = "on";
-			label = "led2";
+			linux,default-trigger = "none";
 		};
 		
-		led@2 {
+		led3 {
 			gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "none";
 			default-state = "on";
-			label = "led3";
+			linux,default-trigger = "none";
 		};
 		
-		led@3 {
+		led4 {
 			gpios = <&gpio6 7 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "none";
 			default-state = "on";
-			label = "led4";
+			linux,default-trigger = "none";
 		};
 		
-		led@4 {
+		led5 {
 			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "none";
 			default-state = "on";
-			label = "led5";
+			linux,default-trigger = "none";
 		};
 	};
 	
@@ -132,10 +127,11 @@
 
 	sii902x_reset: sii902x-reset {
 		compatible = "gpio-reset";
-		reset-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio7 12 GPIO_ACTIVE_LOW>;
 		reset-delay-us = <100000>;
 		#reset-cells = <0>;
 		status = "okay";
+		initially-in-reset;
 	};
 	
 	backlight {
@@ -153,8 +149,8 @@
 
 		reg_usb_hub: regulator@1 {
 			compatible = "regulator-fixed";
-			regulator-min-microvolt = <3300000>;
-			regulator-max-microvolt = <3300000>;
+			regulator-min-microvolt = <2800000>;
+			regulator-max-microvolt = <2800000>;
 			reg = <1>;
 			regulator-name = "usb_hub_rst";
 			gpio = <&gpio3 20 GPIO_ACTIVE_HIGH>;
@@ -168,7 +164,7 @@
 			regulator-max-microvolt = <3300000>;
 			reg = <2>;
 			regulator-name = "osc-ckih1-enable";
-			gpio = <&gpio6 7 GPIO_ACTIVE_HIGH>;
+			gpio = <&gpio6 17 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 			regulator-always-on;
 		};
@@ -204,29 +200,18 @@
 
 &ecspi1 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio3 19 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
 
 	flash: m25p32@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "st,m25p32", "st,m25p";
 		spi-max-frequency = <20000000>;
-		reg = <1>;
-		status = "okay";
-
-		partition@0 {
-			label = "U-Boot";
-			reg = <0x0 0x40000>;
-		};
-
-		partition@40000 {
-			label = "Kernel";
-			reg = <0x40000 0x3c0000>;
-		};
+		reg = <0>;
 	};
 };
 
 &ecspi2 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio2 27 GPIO_ACTIVE_LOW>;
+	cs-gpios = <&gpio2 27 GPIO_ACTIVE_HIGH>;
 };

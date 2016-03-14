@@ -17,7 +17,7 @@
 			regulator-name = "usb_otg_vbus";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
-			gpio = <&gpio3 22 0x2>;
+			gpio = <&gpio3 22 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 		};
 	};
@@ -30,7 +30,7 @@
 		compatible = "fsl,lcd";
 		ipu_id = <0>;
 		disp_id = <0>;
-		default_ifmt = "RGB24";
+		default_ifmt = "RGB565";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ipu>;
 		status = "okay";
@@ -356,6 +356,16 @@
 	no-1-8-v;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;
+	status = "okay";
+};
+
+&usdhc2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usdhc2>;
+	bus-width = <4>;
+	non-removable;
+	no-1-8-v;
+	keep-power-in-suspend;
 	status = "okay";
 };
 
