@@ -61,8 +61,9 @@
 
 &iomuxc {
 	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog>;
 
-	imx6qdl-quanta {
+	imx6qdl-turing {
 	
 		pinctrl_uart1: pinmux-uart1 {
 			fsl,pins = <
@@ -226,7 +227,6 @@
 				MX6QDL_PAD_DI0_PIN15__IPU1_DI0_PIN15       0x10
 				MX6QDL_PAD_DI0_PIN2__IPU1_DI0_PIN02        0x10
 				MX6QDL_PAD_DI0_PIN3__IPU1_DI0_PIN03        0x10
-				MX6QDL_PAD_DI0_PIN4__IPU1_DI0_PIN04        0x80000000
 				MX6QDL_PAD_DISP0_DAT0__IPU1_DISP0_DATA00   0x10
 				MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01   0x10
 				MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02   0x10
@@ -276,7 +276,7 @@
 			>;
 		};
 		
-		pinctrl_gpio: pinmux-gpio { /* GPIO */
+		pinctrl_hog: hoggrp { /* GPIO */
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_8__GPIO1_IO08 				0x80000000		/* GPIO00 PIN 045 as GPIO(1, 8)    */
 				MX6QDL_PAD_EIM_D20__GPIO3_IO20 				0x80000000		/* GPIO01 PIN 092 as GPIO(3, 20)   */
@@ -443,7 +443,7 @@
 			};
 
 			sw2_reg: sw2 {
-				regulator-min-microvolt = <3000000>;
+				regulator-min-microvolt = <3300000>;
 				regulator-max-microvolt = <3300000>;
 				regulator-boot-on;
 				regulator-always-on;
@@ -457,20 +457,20 @@
 			};
 
 			sw3b_reg: sw3b {
-				regulator-min-microvolt = <1250000>;
+				regulator-min-microvolt = <1500000>;
 				regulator-max-microvolt = <1500000>;
 				regulator-boot-on;
 				regulator-always-on;
 			};
 
 			sw4_reg: sw4 {
-				regulator-min-microvolt = <3000000>;
-				regulator-max-microvolt = <3150000>;
+				regulator-min-microvolt = <1975000>;
+				regulator-max-microvolt = <1975000>;
 			};
 
 			swbst_reg: swbst {
 				regulator-min-microvolt = <5000000>;
-				regulator-max-microvolt = <5150000>;
+				regulator-max-microvolt = <5000000>;
 			};
 
 			snvs_reg: vsnvs {
@@ -531,7 +531,9 @@
 		compatible = "ti,tsc2007";
 		reg = <0x48>;
 		interrupt-parent = <&gpio3>;
-		interrupts = <30 0x2>;
+		interrupts = <30 0>;
+		gpios = <&gpio3 30 GPIO_ACTIVE_LOW>;
+		ti,x-plate-ohms = <400>;
 	};
 };
 
@@ -561,7 +563,7 @@
 	status = "okay";
 };
 
-&ssi2 {
+&ssi3 {
 	fsl,mode = "i2s-slave";
 	status = "okay";
 };

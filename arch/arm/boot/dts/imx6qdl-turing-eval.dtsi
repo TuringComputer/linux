@@ -13,6 +13,17 @@
 		mxcfb3 = &mxcfb4;
 	};
 	
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		audio_clk: clock@0 {
+			compatible = "fixed-clock";
+			reg = <0>;
+			#clock-cells = <0>;
+			clock-frequency = <12288000>;
+		};
+	};
+	
 	mxcfb1: fb@0 {
 		compatible = "fsl,mxc_sdc_fb";
 		disp_dev = "ldb";
@@ -112,7 +123,8 @@
 	sound {
 		compatible = "fsl,imx-audio-sgtl5000";
 		model = "imx6x-turing-sgtl5000";
-		ssi-controller = <&ssi2>;
+		ssi-controller = <&ssi3>;
+		cpu-dai = <&ssi3>;
 		audio-codec = <&sgtl5000>;
 		audio-routing =
 			"MIC_IN", "Mic Jack",
@@ -134,6 +146,7 @@
 		reset-gpios = <&gpio7 12 GPIO_ACTIVE_HIGH>;
 		reset-delay-us = <100000>;
 		#reset-cells = <0>;
+		status = "okay";
 	};
 	
 	backlight {
@@ -151,18 +164,24 @@
 
 		reg_usb_hub: regulator@1 {
 			compatible = "regulator-fixed";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
 			reg = <1>;
 			regulator-name = "usb_hub_rst";
 			gpio = <&gpio3 20 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
+			regulator-always-on;
 		};
 
 		reg_audio: regulator@2 {
 			compatible = "regulator-fixed";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
 			reg = <2>;
 			regulator-name = "osc-ckih1-enable";
 			gpio = <&gpio6 7 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
+			regulator-always-on;
 		};
 	};
 };
@@ -171,6 +190,7 @@
 	sgtl5000: codec@0a {
 		compatible = "fsl,sgtl5000";
 		reg = <0x0a>;
+		clocks = <&audio_clk>;
 		VDDA-supply = <&reg_audio>;
 		VDDIO-supply = <&reg_audio>;
 		status = "okay";
@@ -181,12 +201,11 @@
 	sii902x@39 {
 		compatible = "SiI,sii902x";
 		interrupt-parent = <&gpio7>;
-		interrupts = <7 0x2>;
+		interrupts = <1 2>;
 		mode_str ="1280x720M@60";
 		bits-per-pixel = <16>;
 		resets = <&sii902x_reset>;
 		reg = <0x39>;
-		status = "okay";
 	};
 };
 
