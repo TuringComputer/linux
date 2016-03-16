@@ -100,6 +100,13 @@
 			gpio-key,wakeup;
 			linux,code = <KEY_MENU>;
 		};
+		
+		power {
+			label = "Power";
+			gpios = <&gpio6 31 GPIO_ACTIVE_LOW>;
+			gpio-key,wakeup;
+			linux,code = <KEY_POWER>;
+		};
 	};
 	
 	sound {
