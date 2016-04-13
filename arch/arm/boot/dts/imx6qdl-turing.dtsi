@@ -469,8 +469,10 @@
 			};
 
 			sw4_reg: sw4 {
-				regulator-min-microvolt = <800000>;
+				regulator-min-microvolt = <3150000>;
 				regulator-max-microvolt = <3150000>;
+				regulator-boot-on;
+				regulator-always-on;
 			};
 
 			swbst_reg: swbst {
