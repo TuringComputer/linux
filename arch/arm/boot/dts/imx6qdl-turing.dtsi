@@ -448,36 +448,35 @@
 			};
 
 			sw2_reg: sw2 {
-				regulator-min-microvolt = <3300000>;
+				regulator-min-microvolt = <800000>;
 				regulator-max-microvolt = <3300000>;
 				regulator-boot-on;
 				regulator-always-on;
+				regulator-ramp-delay = <6250>;
 			};
 
 			sw3a_reg: sw3a {
-				regulator-min-microvolt = <1250000>;
+				regulator-min-microvolt = <400000>;
 				regulator-max-microvolt = <1500000>;
 				regulator-boot-on;
 				regulator-always-on;
 			};
 
 			sw3b_reg: sw3b {
-				regulator-min-microvolt = <1500000>;
+				regulator-min-microvolt = <400000>;
 				regulator-max-microvolt = <1500000>;
 				regulator-boot-on;
 				regulator-always-on;
 			};
 
 			sw4_reg: sw4 {
-				regulator-min-microvolt = <3150000>;
-				regulator-max-microvolt = <3150000>;
-				regulator-boot-on;
-				regulator-always-on;
+				regulator-min-microvolt = <800000>;
+				regulator-max-microvolt = <3300000>;
 			};
 
 			swbst_reg: swbst {
-				regulator-min-microvolt = <800000>;
-				regulator-max-microvolt = <5000000>;
+				regulator-min-microvolt = <5000000>;
+				regulator-max-microvolt = <5150000>;
 			};
 
 			snvs_reg: vsnvs {
@@ -589,19 +588,37 @@
 
 &dcic2 {
 	dcic_id = <1>;
-	dcic_mux = "dcic-lvds";
+	dcic_mux = "dcic-lvds1";
 	status = "okay";
 };
 
 &ldb {
+	status = "okay";
+
 	lvds-channel@0 {
-		crtc = "ipu1-di0";
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		status = "okay";
+	};
+
+	lvds-channel@1 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		primary;
+		status = "okay";
 	};
 };
+
 
 &cpu0 {
 	arm-supply = <&sw1a_reg>;
 	soc-supply = <&sw1c_reg>;
+};
+
+
+&clks {
+	fsl,ldb-di0-parent = <&clks IMX6QDL_CLK_PLL2_PFD0_352M>;
+	fsl,ldb-di1-parent = <&clks IMX6QDL_CLK_PLL2_PFD0_352M>;
 };
 
 &ecspi1 {
