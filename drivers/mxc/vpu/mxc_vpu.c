@@ -896,6 +896,7 @@ static int vpu_dev_probe(struct platform_device *pdev)
 	u32 iramsize;
 
 	err = of_property_read_u32(np, "iramsize", (u32 *)&iramsize);
+	dev_info(&pdev->dev, "iramsize = 0x%x bytes; err = %d\n", iramsize, err);
 	if (!err && iramsize)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0)
 	{
