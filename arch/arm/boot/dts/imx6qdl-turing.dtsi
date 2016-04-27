@@ -2,7 +2,6 @@
  * Copyright (C) 2016 Turing Computer.
  */
 
-#include "imx6qdl.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 
 / {
