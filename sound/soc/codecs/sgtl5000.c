@@ -36,18 +36,32 @@
 
 /* default value of sgtl5000 registers */
 static const struct reg_default sgtl5000_reg_defaults[] = {
+	{ SGTL5000_CHIP_DIG_POWER, 		0x0000 },
 	{ SGTL5000_CHIP_CLK_CTRL,		0x0008 },
 	{ SGTL5000_CHIP_I2S_CTRL,		0x0010 },
 	{ SGTL5000_CHIP_SSS_CTRL,		0x0010 },
+	{ SGTL5000_CHIP_ADCDAC_CTRL, 0x020c },
 	{ SGTL5000_CHIP_DAC_VOL,		0x3c3c },
 	{ SGTL5000_CHIP_PAD_STRENGTH,		0x015f },
+	{ SGTL5000_CHIP_ANA_ADC_CTRL, 0x0000 },
 	{ SGTL5000_CHIP_ANA_HP_CTRL,		0x1818 },
 	{ SGTL5000_CHIP_ANA_CTRL,		0x0111 },
+	{ SGTL5000_CHIP_LINREG_CTRL, 0x0000 },
+	{ SGTL5000_CHIP_REF_CTRL, 0x0000 },
+	{ SGTL5000_CHIP_MIC_CTRL, 0x0000 },
+	{ SGTL5000_CHIP_LINE_OUT_CTRL, 0x0000 },
 	{ SGTL5000_CHIP_LINE_OUT_VOL,		0x0404 },
 	{ SGTL5000_CHIP_ANA_POWER,		0x7060 },
 	{ SGTL5000_CHIP_PLL_CTRL,		0x5000 },
+	{ SGTL5000_CHIP_CLK_TOP_CTRL, 0x0000 },
+	{ SGTL5000_CHIP_ANA_STATUS, 0x0000 },
+	{ SGTL5000_CHIP_SHORT_CTRL, 0x0000 },
+	{ SGTL5000_CHIP_ANA_TEST2, 0x0000 },
+	{ SGTL5000_DAP_CTRL, 0x0000 },
+	{ SGTL5000_DAP_PEQ, 0x0000 },
 	{ SGTL5000_DAP_BASS_ENHANCE,		0x0040 },
 	{ SGTL5000_DAP_BASS_ENHANCE_CTRL,	0x051f },
+	{ SGTL5000_DAP_AUDIO_EQ, 0x0000 },
 	{ SGTL5000_DAP_SURROUND,		0x0040 },
 	{ SGTL5000_DAP_EQ_BASS_BAND0,		0x002f },
 	{ SGTL5000_DAP_EQ_BASS_BAND1,		0x002f },
@@ -55,6 +69,7 @@ static const struct reg_default sgtl5000_reg_defaults[] = {
 	{ SGTL5000_DAP_EQ_BASS_BAND3,		0x002f },
 	{ SGTL5000_DAP_EQ_BASS_BAND4,		0x002f },
 	{ SGTL5000_DAP_MAIN_CHAN,		0x8000 },
+	{ SGTL5000_DAP_MIX_CHAN, 0x0000 },
 	{ SGTL5000_DAP_AVC_CTRL,		0x0510 },
 	{ SGTL5000_DAP_AVC_THRESHOLD,		0x1473 },
 	{ SGTL5000_DAP_AVC_ATTACK,		0x0028 },
@@ -922,20 +937,6 @@ static int sgtl5000_set_bias_level(struct snd_soc_codec *codec,
 			if (ret)
 				return ret;
 			udelay(10);
-
-			regcache_cache_only(sgtl5000->regmap, false);
-
-			ret = regcache_sync(sgtl5000->regmap);
-			if (ret != 0) {
-				dev_err(codec->dev,
-					"Failed to restore cache: %d\n", ret);
-
-				regcache_cache_only(sgtl5000->regmap, true);
-				regulator_bulk_disable(ARRAY_SIZE(sgtl5000->supplies),
-						       sgtl5000->supplies);
-
-				return ret;
-			}
 		}
 
 		break;
@@ -1061,7 +1062,11 @@ static bool sgtl5000_readable(struct device *dev, unsigned int reg)
 #ifdef CONFIG_SUSPEND
 static int sgtl5000_suspend(struct snd_soc_codec *codec)
 {
+	struct sgtl5000_priv *sgtl5000 = snd_soc_codec_get_drvdata(codec);
+
 	sgtl5000_set_bias_level(codec, SND_SOC_BIAS_OFF);
+
+	regcache_cache_only(sgtl5000->regmap, true);
 
 	return 0;
 }
@@ -1073,8 +1078,8 @@ static int sgtl5000_suspend(struct snd_soc_codec *codec)
  */
 static int sgtl5000_restore_regs(struct snd_soc_codec *codec)
 {
-	u16 *cache = codec->reg_cache;
 	u16 reg;
+	struct sgtl5000_priv *sgtl5000 = snd_soc_codec_get_drvdata(codec);
 
 	/* restore regular registers */
 	for (reg = 0; reg <= SGTL5000_CHIP_SHORT_CTRL; reg += 2) {
@@ -1087,12 +1092,12 @@ static int sgtl5000_restore_regs(struct snd_soc_codec *codec)
 			reg == SGTL5000_CHIP_REF_CTRL)
 			continue;
 
-		snd_soc_write(codec, reg, cache[reg]);
+		regmap_update_bits(sgtl5000->regmap, reg, reg, 0);
 	}
 
 	/* restore dap registers */
 	for (reg = SGTL5000_DAP_REG_OFFSET; reg < SGTL5000_MAX_REG_OFFSET; reg += 2)
-		snd_soc_write(codec, reg, cache[reg]);
+		regmap_update_bits(sgtl5000->regmap, reg, reg, 0);
 
 	/*
 	 * restore these regs according to the power setting sequence in
@@ -1107,30 +1112,30 @@ static int sgtl5000_restore_regs(struct snd_soc_codec *codec)
 	 * 3. SGTL5000_CHIP_REF_CTRL controls Analog Ground Voltage,
 	 *    prefer to resotre it after SGTL5000_CHIP_ANA_POWER restored
 	 */
-	snd_soc_write(codec, SGTL5000_CHIP_LINREG_CTRL,
-			cache[SGTL5000_CHIP_LINREG_CTRL]);
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_LINREG_CTRL, SGTL5000_CHIP_LINREG_CTRL, 0);
 
-	snd_soc_write(codec, SGTL5000_CHIP_ANA_POWER,
-			cache[SGTL5000_CHIP_ANA_POWER]);
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, SGTL5000_PLL_POWERUP_BIT, 0);
 
-	snd_soc_write(codec, SGTL5000_CHIP_CLK_CTRL,
-			cache[SGTL5000_CHIP_CLK_CTRL]);
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_CLK_CTRL, SGTL5000_MCLK_FREQ_PLL, 0);
 
-	snd_soc_write(codec, SGTL5000_CHIP_REF_CTRL,
-			cache[SGTL5000_CHIP_REF_CTRL]);
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_REF_CTRL, SGTL5000_CHIP_REF_CTRL, 0);
 
-	snd_soc_write(codec, SGTL5000_CHIP_LINE_OUT_CTRL,
-			cache[SGTL5000_CHIP_LINE_OUT_CTRL]);
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_LINE_OUT_CTRL, SGTL5000_CHIP_LINE_OUT_CTRL, 0);
 	return 0;
 }
 
 static int sgtl5000_resume(struct snd_soc_codec *codec)
 {
+	struct sgtl5000_priv *sgtl5000 = snd_soc_codec_get_drvdata(codec);
+
 	/* Bring the codec back up to standby to enable regulators */
 	sgtl5000_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
 
 	/* Restore registers by cached in memory */
 	sgtl5000_restore_regs(codec);
+
+	regcache_cache_only(sgtl5000->regmap, false);
+
 	return 0;
 }
 #else

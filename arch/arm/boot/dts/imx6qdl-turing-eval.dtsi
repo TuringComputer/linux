@@ -201,3 +201,8 @@
 	fsl,spi-num-chipselects = <1>;
 	cs-gpios = <&gpio2 27 GPIO_ACTIVE_HIGH>;
 };
+
+&pcie {
+	power-on-gpio = <&gpio1 23 0>;
+	reset-gpio = <&gpio7 8 0>;
+};
