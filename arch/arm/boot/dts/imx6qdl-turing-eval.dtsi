@@ -206,3 +206,49 @@
 	power-on-gpio = <&gpio1 23 0>;
 	reset-gpio = <&gpio7 8 0>;
 };
+
+
+&ldb {
+	lvds-channel@0 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		status = "okay";
+
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: atm0700l6bt {
+				clock-frequency = <30000>;
+				hactive = <800>;
+				vactive = <480>;
+				hback-porch = <46>;
+				hfront-porch = <210>;
+				vback-porch = <23>;
+				vfront-porch = <22>;
+				hsync-len = <10>;
+				vsync-len = <10>;
+			};
+		};
+	};
+
+	lvds-channel@1 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		primary;
+		status = "okay";
+
+		display-timings {
+			native-mode = <&timing1>;
+			timing1: atm0700l6bt {
+				clock-frequency = <30000>;
+				hactive = <800>;
+				vactive = <480>;
+				hback-porch = <46>;
+				hfront-porch = <210>;
+				vback-porch = <23>;
+				vfront-porch = <22>;
+				hsync-len = <10>;
+				vsync-len = <10>;
+			};
+		};
+	};
+};
