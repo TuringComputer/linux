@@ -59,25 +59,26 @@
 	
 	gpio-keys {
 		compatible = "gpio-keys";
+		label = "gpio-keys";
 
 		home {
-			label = "Home Button";
+			label = "Home";
 			gpios = <&gpio6 10 GPIO_ACTIVE_LOW>;
 			gpio-key,wakeup;
-			linux,code = <KEY_HOME>;
+			linux,code = <KEY_HOMEPAGE>;
 		};
 
 		back {
 			label = "Back";
 			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
-			gpio-key,wakeup;
+			gpio-key;
 			linux,code = <KEY_BACK>;
 		};
 
 		menu {
 			label = "Menu";
 			gpios = <&gpio6 9 GPIO_ACTIVE_LOW>;
-			gpio-key,wakeup;
+			gpio-key;
 			linux,code = <KEY_MENU>;
 		};
 		

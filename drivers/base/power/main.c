@@ -808,10 +808,14 @@ void dpm_resume(pm_message_t state)
 				dpm_save_failed_step(SUSPEND_RESUME);
 				dpm_save_failed_dev(dev_name(dev));
 				pm_dev_err(dev, state, "", error);
+				dev_dbg(dev, "resume fail: %d\n", error);
+			} else {
+				dev_dbg(dev, "resume ok\n");
 			}
 
 			mutex_lock(&dpm_list_mtx);
 		}
+
 		if (!list_empty(&dev->power.entry))
 			list_move_tail(&dev->power.entry, &dpm_prepared_list);
 		put_device(dev);
