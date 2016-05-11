@@ -59,25 +59,26 @@
 	
 	gpio-keys {
 		compatible = "gpio-keys";
+		label = "gpio-keys";
 
 		home {
-			label = "Home Button";
+			label = "Home";
 			gpios = <&gpio6 10 GPIO_ACTIVE_LOW>;
 			gpio-key,wakeup;
-			linux,code = <KEY_HOME>;
+			linux,code = <KEY_HOMEPAGE>;
 		};
 
 		back {
 			label = "Back";
 			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
-			gpio-key,wakeup;
+			gpio-key;
 			linux,code = <KEY_BACK>;
 		};
 
 		menu {
 			label = "Menu";
 			gpios = <&gpio6 9 GPIO_ACTIVE_LOW>;
-			gpio-key,wakeup;
+			gpio-key;
 			linux,code = <KEY_MENU>;
 		};
 		
@@ -152,7 +153,19 @@
 			regulator-name = "osc-ckih1-enable";
 			gpio = <&gpio6 17 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			regulator-always-on;
+			regulator-boot-on;
+			regulator-off-in-suspend;
+		};
+		
+		reg_lcd: regulator@3 {
+			compatible = "regulator-fixed";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			reg = <3>;
+			regulator-name = "lcd-enable";
+			gpio = <&gpio1 22 GPIO_ACTIVE_LOW>;
+			regulator-boot-on;
+			regulator-off-in-suspend;
 		};
 	};
 };
@@ -213,33 +226,12 @@
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
 		status = "okay";
+		primary;
 
 		display-timings {
 			native-mode = <&timing0>;
 			timing0: atm0700l6bt {
-				clock-frequency = <30000>;
-				hactive = <800>;
-				vactive = <480>;
-				hback-porch = <46>;
-				hfront-porch = <210>;
-				vback-porch = <23>;
-				vfront-porch = <22>;
-				hsync-len = <10>;
-				vsync-len = <10>;
-			};
-		};
-	};
-
-	lvds-channel@1 {
-		fsl,data-mapping = "spwg";
-		fsl,data-width = <18>;
-		primary;
-		status = "okay";
-
-		display-timings {
-			native-mode = <&timing1>;
-			timing1: atm0700l6bt {
-				clock-frequency = <30000>;
+				clock-frequency = <30000000>;
 				hactive = <800>;
 				vactive = <480>;
 				hback-porch = <46>;
