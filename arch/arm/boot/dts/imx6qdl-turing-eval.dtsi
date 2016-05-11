@@ -165,7 +165,19 @@
 			regulator-name = "osc-ckih1-enable";
 			gpio = <&gpio6 17 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			regulator-always-on;
+			regulator-boot-on;
+			regulator-off-in-suspend;
+		};
+		
+		reg_lcd: regulator@3 {
+			compatible = "regulator-fixed";
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+			reg = <3>;
+			regulator-name = "lcd-enable";
+			gpio = <&gpio1 22 GPIO_ACTIVE_LOW>;
+			regulator-boot-on;
+			regulator-off-in-suspend;
 		};
 	};
 };
@@ -226,11 +238,12 @@
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
 		status = "okay";
+		primary;
 
 		display-timings {
 			native-mode = <&timing0>;
 			timing0: atm0700l6bt {
-				clock-frequency = <30000>;
+				clock-frequency = <30000000>;
 				hactive = <800>;
 				vactive = <480>;
 				hback-porch = <46>;
@@ -246,13 +259,12 @@
 	lvds-channel@1 {
 		fsl,data-mapping = "spwg";
 		fsl,data-width = <18>;
-		primary;
 		status = "okay";
 
 		display-timings {
 			native-mode = <&timing1>;
 			timing1: atm0700l6bt {
-				clock-frequency = <30000>;
+				clock-frequency = <30000000>;
 				hactive = <800>;
 				vactive = <480>;
 				hback-porch = <46>;
