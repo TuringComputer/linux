@@ -123,9 +123,10 @@
 	
 	backlight {
 		compatible = "pwm-backlight";
-		pwms = <&pwm1 0 5000000>;
+		pwms = <&pwm1 0 1000000>;
 		brightness-levels = <0 4 8 16 32 64 128 255>;
 		default-brightness-level = <7>;
+		enable-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
 		status = "okay";
 	};
 	
@@ -153,17 +154,6 @@
 			regulator-name = "osc-ckih1-enable";
 			gpio = <&gpio6 17 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			regulator-boot-on;
-			regulator-off-in-suspend;
-		};
-		
-		reg_lcd: regulator@3 {
-			compatible = "regulator-fixed";
-			regulator-min-microvolt = <5000000>;
-			regulator-max-microvolt = <5000000>;
-			reg = <3>;
-			regulator-name = "lcd-enable";
-			gpio = <&gpio1 22 GPIO_ACTIVE_LOW>;
 			regulator-boot-on;
 			regulator-off-in-suspend;
 		};
