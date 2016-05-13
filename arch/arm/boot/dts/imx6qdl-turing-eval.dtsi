@@ -169,6 +169,35 @@
 		VDDIO-supply = <&reg_audio>;
 		status = "okay";
 	};
+	
+	lsm9ds1-ag@0x6B {
+        compatible = "st,lsm9ds1-acc-gyr";
+        reg = <0x6B>;
+        status = "okay";
+        rot-matrix = /bits/ 16 <(1) (0) (0)
+                                (0) (1) (0)
+                                (0) (0) (1)>;
+        g-poll-interval = <100>;
+        g-min-interval = <2>;
+        g-fs-range = <0>;
+        x-poll-interval = <100>;
+        x-min-interval = <1>;
+        x-fs-range = <0>;
+        aa-filter-bw = <0>;
+    };
+
+    lsm9ds1-m@0x1E {
+        compatible = "st,lsm9ds1-mag";
+        reg = <0x1E>;
+        status = "okay";
+        rot-matrix = /bits/ 16 <(1) (0) (0)
+                                (0) (1) (0)
+                                (0) (0) (1)>;
+        poll-interval = <100>;
+        min-interval = <13>;
+        fs-range = <0>;
+    };
+	
 };
 
 &i2c3 {
