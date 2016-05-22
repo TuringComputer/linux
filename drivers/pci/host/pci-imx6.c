@@ -398,6 +398,15 @@ static int imx6_pcie_deassert_core_reset(struct pcie_port *pp)
 				IMX6Q_GPR1_PCIE_REF_CLK_EN);
 	}
 
+	/* allow the clocks to stabilize */
+	usleep_range(200, 500);
+
+	/* power up core phy and enable ref clock */
+	regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR1,
+				IMX6Q_GPR1_PCIE_TEST_PD, 0 << 18);
+	regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR1,
+				IMX6Q_GPR1_PCIE_REF_CLK_EN, 1 << 16);
+
 	/* Some boards don't have PCIe reset GPIO. */
 	if (gpio_is_valid(imx6_pcie->reset_gpio)) {
 		gpio_set_value_cansleep(imx6_pcie->reset_gpio, 0);

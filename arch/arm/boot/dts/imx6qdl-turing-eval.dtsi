@@ -235,8 +235,9 @@
 };
 
 &pcie {
-	power-on-gpio = <&gpio1 23 0>;
-	reset-gpio = <&gpio7 8 0>;
+	power-on-gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+	reset-gpio = <&gpio7 8 GPIO_ACTIVE_LOW>;
+	wakeup-gpio = <&gpio5 2 GPIO_ACTIVE_HIGH>;
 };
 
 
