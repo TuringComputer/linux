@@ -100,14 +100,14 @@
 			>;
 		};
 
-		pinctrl_usdhc2: pinmux-usdhc2 {
+		pinctrl_usdhc3: pinmux-usdhc3 {
 			fsl,pins = <
-				MX6QDL_PAD_SD2_CMD__SD2_CMD    0x070b1
-				MX6QDL_PAD_SD2_CLK__SD2_CLK    0x070b1
-				MX6QDL_PAD_SD2_DAT0__SD2_DATA0 0x070b1
-				MX6QDL_PAD_SD2_DAT1__SD2_DATA1 0x070b1
-				MX6QDL_PAD_SD2_DAT2__SD2_DATA2 0x070b1
-				MX6QDL_PAD_SD2_DAT3__SD2_DATA3 0x070b1
+				MX6QDL_PAD_SD3_CMD__SD3_CMD    0x070b1
+				MX6QDL_PAD_SD3_CLK__SD3_CLK    0x070b1
+				MX6QDL_PAD_SD3_DAT0__SD3_DATA0 0x070b1
+				MX6QDL_PAD_SD3_DAT1__SD3_DATA1 0x070b1
+				MX6QDL_PAD_SD3_DAT2__SD3_DATA2 0x070b1
+				MX6QDL_PAD_SD3_DAT3__SD3_DATA3 0x070b1
 			>;
 		};
 
@@ -354,9 +354,9 @@
 	status = "okay";
 };
 
-&usdhc2 {
+&usdhc3 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc2>;
+	pinctrl-0 = <&pinctrl_usdhc3>;
 	bus-width = <4>;
 	non-removable;
 	no-1-8-v;
