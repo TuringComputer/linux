@@ -104,13 +104,6 @@
 		mux-ext-port = <3>;
 		hp-det-gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
 	};
-	
-	sound-spdif {
-		compatible = "fsl,imx-audio-spdif";
-		model = "imx-spdif";
-		spdif-controller = <&spdif>;
-		spdif-out;
-	};
 
 	sii902x_reset: sii902x-reset {
 		compatible = "gpio-reset";
