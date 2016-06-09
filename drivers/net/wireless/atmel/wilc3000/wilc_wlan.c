@@ -713,12 +713,12 @@ static struct rxq_entry_t *wilc_wlan_rxq_remove(void)
 void chip_sleep_manually(unsigned int u32SleepTime, int source)
 {
 	acquire_bus(ACQUIRE_ONLY, source);
-
 	chip_allow_sleep(source);
-
 	/* Trigger the manual sleep interrupt host_interrupt_4 */
-	g_wlan.hif_func.hif_write_reg(0x10B8, 1);
-
+	if(g_wlan.hif_func.hif_write_reg != NULL)
+	{
+		g_wlan.hif_func.hif_write_reg(0x10B8, 1);
+	}
 	release_bus(RELEASE_ONLY, source);
 }
 
