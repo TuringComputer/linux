@@ -110,7 +110,7 @@ typedef enum { ANTENNA1  = 0,
  */
 #define MODALIAS	"wilc_spi"
 #define GPIO_NUM	93
-#define MIN_SPEED 20000000
+#define MIN_SPEED 50000000
 #define GPIO_NUM_RESET	31
 #define GPIO_NUM_CHIP_EN	27
 
