@@ -20,6 +20,13 @@
 			enable-active-high;
 		};
 	};
+	
+	sound-spdif {
+		compatible = "fsl,imx-audio-spdif";
+		model = "imx-spdif";
+		spdif-controller = <&spdif>;
+		spdif-out;
+	};
 
 	lcd@0 {
 		compatible = "fsl,lcd";
@@ -76,8 +83,8 @@
 		pinctrl_uart3: pinmux-uart3 {
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D23__UART3_CTS_B		0x1b0b1
-				MX6QDL_PAD_EIM_D24__UART3_RX_DATA	0x1b0b1
-				MX6QDL_PAD_EIM_D25__UART3_TX_DATA	0x1b0b1
+				MX6QDL_PAD_EIM_D24__UART3_TX_DATA	0x1b0b1
+				MX6QDL_PAD_EIM_D25__UART3_RX_DATA	0x1b0b1
 				MX6QDL_PAD_EIM_D31__UART3_RTS_B		0x1b0b1
 			>;
 		};
@@ -100,14 +107,14 @@
 			>;
 		};
 
-		pinctrl_usdhc2: pinmux-usdhc2 {
+		pinctrl_usdhc3: pinmux-usdhc3 {
 			fsl,pins = <
-				MX6QDL_PAD_SD2_CMD__SD2_CMD    0x070b1
-				MX6QDL_PAD_SD2_CLK__SD2_CLK    0x070b1
-				MX6QDL_PAD_SD2_DAT0__SD2_DATA0 0x070b1
-				MX6QDL_PAD_SD2_DAT1__SD2_DATA1 0x070b1
-				MX6QDL_PAD_SD2_DAT2__SD2_DATA2 0x070b1
-				MX6QDL_PAD_SD2_DAT3__SD2_DATA3 0x070b1
+				MX6QDL_PAD_SD3_CMD__SD3_CMD    0x070b1
+				MX6QDL_PAD_SD3_CLK__SD3_CLK    0x070b1
+				MX6QDL_PAD_SD3_DAT0__SD3_DATA0 0x070b1
+				MX6QDL_PAD_SD3_DAT1__SD3_DATA1 0x070b1
+				MX6QDL_PAD_SD3_DAT2__SD3_DATA2 0x070b1
+				MX6QDL_PAD_SD3_DAT3__SD3_DATA3 0x070b1
 			>;
 		};
 
@@ -210,8 +217,6 @@
 				MX6QDL_PAD_SD2_DAT3__AUD4_TXC		0x130b0
 				MX6QDL_PAD_SD2_DAT2__AUD4_TXD		0x110b0
 				MX6QDL_PAD_SD2_DAT1__AUD4_TXFS		0x130b0
-				MX6QDL_PAD_SD2_CLK__AUD4_RXFS		0x130b0
-				MX6QDL_PAD_SD2_CMD__AUD4_RXC 		0x130b0
 			>;
 		};
 
@@ -266,7 +271,7 @@
 		
 		pinctrl_spdif: pinmux-spdif {
 			fsl,pins = <
-				MX6QDL_PAD_GPIO_19__SPDIF_OUT 				0x13091
+				MX6QDL_PAD_GPIO_19__SPDIF_OUT 				0x1b0b0
 			>;
 		};
 		
@@ -354,9 +359,9 @@
 	status = "okay";
 };
 
-&usdhc2 {
+&usdhc3 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc2>;
+	pinctrl-0 = <&pinctrl_usdhc3>;
 	bus-width = <4>;
 	non-removable;
 	no-1-8-v;

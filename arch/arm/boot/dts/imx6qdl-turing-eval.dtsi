@@ -104,13 +104,6 @@
 		mux-ext-port = <3>;
 		hp-det-gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
 	};
-	
-	sound-spdif {
-		compatible = "fsl,imx-audio-spdif";
-		model = "imx-spdif";
-		spdif-controller = <&spdif>;
-		spdif-out;
-	};
 
 	sii902x_reset: sii902x-reset {
 		compatible = "gpio-reset";
@@ -123,7 +116,7 @@
 	
 	backlight {
 		compatible = "pwm-backlight";
-		pwms = <&pwm1 0 5000000>;
+		pwms = <&pwm1 0 1000000>;
 		brightness-levels = <
 			0  1  2  3  4  5  6  7  8  9
 			10 11 12 13 14 15 16 17 18 19
@@ -196,6 +189,7 @@
         x-min-interval = <1>;
         x-fs-range = <0>;
         aa-filter-bw = <0>;
+        /*gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>, <&gpio6 7 GPIO_ACTIVE_HIGH>;*/
     };
 
     lsm9ds1-m@0x1E {
@@ -208,6 +202,7 @@
         poll-interval = <100>;
         min-interval = <13>;
         fs-range = <0>;
+        /*gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;*/
     };
 	
 };
@@ -247,8 +242,9 @@
 };
 
 &pcie {
-	power-on-gpio = <&gpio1 23 0>;
-	reset-gpio = <&gpio7 8 0>;
+	power-on-gpio = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+	reset-gpio = <&gpio7 8 GPIO_ACTIVE_LOW>;
+	wakeup-gpio = <&gpio5 2 GPIO_ACTIVE_HIGH>;
 };
 
 
@@ -274,4 +270,8 @@
 			};
 		};
 	};
+};
+
+&usdhc3 {
+	max-frequency = <20000000>;
 };
