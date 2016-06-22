@@ -697,4 +697,10 @@ config INPUT_LSM9DS1
 	help
 	  Say Y here to enable STMicroelectronics LSM9DS1 inertial module.
 
+config INPUT_LM95071
+	tristate "Texas Instruments LM95071"
+	depends on INPUT && HWMON && SPI_MASTER
+	help
+	  Say Y here to enable Texas Instruments LM95071 temperature sensor module.
+
 endif

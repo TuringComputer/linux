@@ -224,7 +224,15 @@
 
 &ecspi2 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio2 27 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+	
+	temp_sensor: lm95071@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "ti,lm95071";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+	};	
 };
 
 &pcie {
