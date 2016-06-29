@@ -83,7 +83,7 @@
 
 #define GPIO0						TURING_SOM_GPIO00		// CSI Reset
 #define GPIO1						TURING_SOM_GPIO01		// USB Hub Reset
-#define GPIO2						TURING_SOM_GPIO02
+#define GPIO2						TURING_SOM_GPIO02		// LCD Enable
 #define GPIO3						TURING_SOM_GPIO03
 #define GPIO4						TURING_SOM_GPIO04
 #define GPIO5						TURING_SOM_GPIO05
@@ -108,7 +108,7 @@
 #define GPIO24						TURING_SOM_GPIO24		// HDMI Reset
 #define GPIO25						TURING_SOM_GPIO25		// Headphone Detect
 #define OSC_CKIH1_EN				TURING_SOM_GPIO26
-#define LCD_EN						TURING_SOM_GPIO27
+#define LCD_EN						TURING_SOM_GPIO02
 #define OTG_PWR_EN					TURING_SOM_OTG_PWR_EN
 #define OTG_OC						TURING_SOM_OTG_OC
 #define SD_CD						TURING_SOM_SD1_CD
@@ -426,18 +426,26 @@ static struct platform_device turing_leds_device = {
 	}
 };
 
-static struct fb_videomode video_modes[] = {
+static struct fb_videomode video_modes_lvds[] = {
 		{
-			 /* 800x480 @ 57 Hz , pixel clk @ 27MHz */
-			 "CLAA-WVGA", 57, 800, 480, 37037, 40, 60, 10, 10, 20, 10,
+			 /* 800x480 @ 60 Hz , pixel clk @ 30MHz */
+			 "ATM0700L6BT", 60, 800, 480, 30000,
+			 210, 46,
+			 22, 23,
+			 10, 10,
 			 FB_SYNC_CLK_LAT_FALL,
 			 FB_VMODE_NONINTERLACED,
 			 0,
 		},
+};
+
+static struct fb_videomode video_modes_hdmi[] = {
 		{
-			 /* 800x480 @ 60 Hz , pixel clk @ 32MHz */
-			 "SEIKO-WVGA", 60, 800, 480, 29850, 89, 164, 23, 10, 10, 10,
-			 FB_SYNC_CLK_LAT_FALL,
+			 "1024x768M@60", 60, 1024, 768, 15385,
+			 220, 40,
+			 21, 7,
+			 60, 10,
+			 0,
 			 FB_VMODE_NONINTERLACED,
 			 0,
 		},
@@ -535,17 +543,17 @@ static struct resource mxcfb_resources[] = {
 
 static struct mxc_fb_platform_data fb_data[] = {
 		{
-			 .interface_pix_fmt = IPU_PIX_FMT_RGB565,
-			 .mode_str = "CLAA-WVGA",
-			 .mode = video_modes,
-			 .num_modes = ARRAY_SIZE(video_modes),
+			 .interface_pix_fmt = IPU_PIX_FMT_LVDS666,
+			 .mode_str = "ATM0700L6BT",
+			 .mode = video_modes_lvds,
+			 .num_modes = ARRAY_SIZE(video_modes_lvds),
 		},
 		{
 			 .interface_pix_fmt = IPU_PIX_FMT_RGB24,
-			 .mode_str = "1024x768M-16@60",
-			 .mode = video_modes,
-			 .num_modes = ARRAY_SIZE(video_modes),
-		 },
+			 .mode_str = "1024x768M@60",
+			 .mode = video_modes_hdmi,
+			 .num_modes = ARRAY_SIZE(video_modes_hdmi),
+		},
 };
 
 extern int primary_di;
@@ -555,9 +563,6 @@ mxc_init_fb(void)
 {
 	if (!machine_is_mx53_turing())
 		return 0;
-
-	if (primary_di < 0)
-		primary_di = 1;
 
 	if (primary_di) {
 		printk(KERN_INFO "DI1 is primary\n");

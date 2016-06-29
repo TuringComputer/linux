@@ -116,21 +116,33 @@ DEFINE_SPINLOCK(ldb_lock);
 
 struct fb_videomode mxcfb_ldb_modedb[] = {
 	{
-	 "1080P60", 60, 1920, 1080, 7692,
-	 100, 40,
-	 30, 3,
-	 10, 2,
-	 0,
-	 FB_VMODE_NONINTERLACED,
-	 FB_MODE_IS_DETAILED,},
+		 "1080P60", 60, 1920, 1080, 7692,
+		 100, 40,
+		 30, 3,
+		 10, 2,
+		 0,
+		 FB_VMODE_NONINTERLACED,
+		 FB_MODE_IS_DETAILED,
+	},
 	{
-	 "XGA", 60, 1024, 768, 15385,
-	 220, 40,
-	 21, 7,
-	 60, 10,
-	 0,
-	 FB_VMODE_NONINTERLACED,
-	 FB_MODE_IS_DETAILED,},
+		 "XGA", 60, 1024, 768, 15385,
+		 220, 40,
+		 21, 7,
+		 60, 10,
+		 0,
+		 FB_VMODE_NONINTERLACED,
+		 FB_MODE_IS_DETAILED,
+	},
+	{
+		 /* 800x480 @ 60 Hz , pixel clk @ 30MHz */
+		 "ATM0700L6BT", 60, 800, 480, 30000,
+		 210, 46,
+		 22, 23,
+		 10, 10,
+		 FB_SYNC_CLK_LAT_FALL,
+		 FB_VMODE_NONINTERLACED,
+		 0,
+	},
 };
 int mxcfb_ldb_modedb_sz = ARRAY_SIZE(mxcfb_ldb_modedb);
 
@@ -442,6 +454,7 @@ static int ldb_fb_pre_setup(struct fb_info *fbi)
 				fbi->var.xres, fbi->var.yres);
 		return 0;
 	}
+	dev_info(g_ldb_dev, "using %s mode: xres=%d, yres=%d\n", fbi->mode->name, fbi->mode->xres, fbi->mode->yres);
 
 	if (fbi->fbops->fb_ioctl) {
 		mm_segment_t old_fs;
@@ -465,12 +478,10 @@ static int ldb_fb_pre_setup(struct fb_info *fbi)
 			if (fb_mode_is_equal(fbi->mode, &mxcfb_ldb_modedb[0])) {
 				if (ipu_di == 0) {
 					ldb.chan_mode_opt = LDB_SPL_DI0;
-					dev_warn(g_ldb_dev,
-						"default di0 split mode\n");
+					dev_warn(g_ldb_dev, "default di0 split mode\n");
 				} else {
 					ldb.chan_mode_opt = LDB_SPL_DI1;
-					dev_warn(g_ldb_dev,
-						"default di1 split mode\n");
+					dev_warn(g_ldb_dev,	"default di1 split mode\n");
 				}
 				ldb.chan_bit_map[0] = LDB_BIT_MAP_SPWG;
 				ldb.chan_bit_map[1] = LDB_BIT_MAP_SPWG;
@@ -478,16 +489,34 @@ static int ldb_fb_pre_setup(struct fb_info *fbi)
 				if (ipu_di == 0) {
 					ldb.chan_mode_opt = LDB_SIN_DI0;
 					ldb.chan_bit_map[0] = LDB_BIT_MAP_SPWG;
-					dev_warn(g_ldb_dev,
-						 "default di0 single mode\n");
+					dev_warn(g_ldb_dev, "default di0 single mode\n");
 				} else {
 					ldb.chan_mode_opt = LDB_SIN_DI1;
 					ldb.chan_bit_map[1] = LDB_BIT_MAP_SPWG;
-					dev_warn(g_ldb_dev,
-						 "default di1 single mode\n");
+					dev_warn(g_ldb_dev, "default di1 single mode\n");
+				}
+			} else if (fb_mode_is_equal(fbi->mode, &mxcfb_ldb_modedb[2])) {
+				if (ipu_di == 0) {
+					ldb.chan_mode_opt = LDB_SIN_DI0;
+					ldb.chan_bit_map[0] = LDB_BIT_MAP_SPWG;
+					dev_warn(g_ldb_dev, "default di0 single mode\n");
+				} else {
+					ldb.chan_mode_opt = LDB_SIN_DI1;
+					ldb.chan_bit_map[1] = LDB_BIT_MAP_SPWG;
+					dev_warn(g_ldb_dev, "default di1 single mode\n");
 				}
 			}
 		}
+
+		/**
+		 * Configuring Clock according to formula ((10^12/15385) * 7)
+		 */
+		if (fb_mode_is_equal(fbi->mode, &mxcfb_ldb_modedb[1])) {
+			ldb_clk_prate = 455000000;
+		} else if (fb_mode_is_equal(fbi->mode, &mxcfb_ldb_modedb[2])) {
+			ldb_clk_prate = 233310000;
+		}
+		dev_info(g_ldb_dev, "ldb_clk_prate: %d\n", ldb_clk_prate);
 
 		/* TODO:Set the correct pll4 rate for all situations */
 		if (ipu_di == 1) {
