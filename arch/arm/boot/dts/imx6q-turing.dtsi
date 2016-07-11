@@ -1,0 +1,10 @@
+/*
+ * Copyright (C) 2016 Turing Computer.
+ */
+
+#include "imx6q.dtsi"
+#include "imx6qdl-turing.dtsi"
+
+&sata {
+	status = "okay";
+};

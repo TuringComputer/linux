@@ -1,0 +1,6 @@
+/*
+ * Copyright (C) 2016 Turing Computer.
+ */
+
+#include "imx6dl.dtsi"
+#include "imx6qdl-turing.dtsi"
