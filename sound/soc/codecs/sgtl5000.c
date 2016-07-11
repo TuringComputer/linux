@@ -1091,6 +1091,90 @@ static bool sgtl5000_readable(struct device *dev, unsigned int reg)
 	}
 }
 
+#ifdef CONFIG_SUSPEND
+static int sgtl5000_suspend(struct snd_soc_codec *codec)
+{
+	struct sgtl5000_priv *sgtl5000 = snd_soc_codec_get_drvdata(codec);
+
+	sgtl5000_set_bias_level(codec, SND_SOC_BIAS_OFF);
+
+	regcache_cache_only(sgtl5000->regmap, true);
+
+	return 0;
+}
+
+/*
+ * restore all sgtl5000 registers,
+ * since a big hole between dap and regular registers,
+ * we will restore them respectively.
+ */
+static int sgtl5000_restore_regs(struct snd_soc_codec *codec)
+{
+	u16 reg;
+	struct sgtl5000_priv *sgtl5000 = snd_soc_codec_get_drvdata(codec);
+
+	/* restore regular registers */
+	for (reg = 0; reg <= SGTL5000_CHIP_SHORT_CTRL; reg += 2) {
+
+		/* These regs should restore in particular order */
+		if (reg == SGTL5000_CHIP_ANA_POWER ||
+			reg == SGTL5000_CHIP_CLK_CTRL ||
+			reg == SGTL5000_CHIP_LINREG_CTRL ||
+			reg == SGTL5000_CHIP_LINE_OUT_CTRL ||
+			reg == SGTL5000_CHIP_REF_CTRL)
+			continue;
+
+		regmap_update_bits(sgtl5000->regmap, reg, reg, 0);
+	}
+
+	/* restore dap registers */
+	for (reg = SGTL5000_DAP_REG_OFFSET; reg < SGTL5000_MAX_REG_OFFSET; reg += 2)
+		regmap_update_bits(sgtl5000->regmap, reg, reg, 0);
+
+	/*
+	 * restore these regs according to the power setting sequence in
+	 * sgtl5000_set_power_regs() and clock setting sequence in
+	 * sgtl5000_set_clock().
+	 *
+	 * The order of restore is:
+	 * 1. SGTL5000_CHIP_CLK_CTRL MCLK_FREQ bits (1:0) should be restore after
+	 *    SGTL5000_CHIP_ANA_POWER PLL bits set
+	 * 2. SGTL5000_CHIP_LINREG_CTRL should be set before
+	 *    SGTL5000_CHIP_ANA_POWER LINREG_D restored
+	 * 3. SGTL5000_CHIP_REF_CTRL controls Analog Ground Voltage,
+	 *    prefer to resotre it after SGTL5000_CHIP_ANA_POWER restored
+	 */
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_LINREG_CTRL, SGTL5000_CHIP_LINREG_CTRL, 0);
+
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_ANA_POWER, SGTL5000_PLL_POWERUP_BIT, 0);
+
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_CLK_CTRL, SGTL5000_MCLK_FREQ_PLL, 0);
+
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_REF_CTRL, SGTL5000_CHIP_REF_CTRL, 0);
+
+	regmap_update_bits(sgtl5000->regmap, SGTL5000_CHIP_LINE_OUT_CTRL, SGTL5000_CHIP_LINE_OUT_CTRL, 0);
+	return 0;
+}
+
+static int sgtl5000_resume(struct snd_soc_codec *codec)
+{
+	struct sgtl5000_priv *sgtl5000 = snd_soc_codec_get_drvdata(codec);
+
+	/* Bring the codec back up to standby to enable regulators */
+	sgtl5000_set_bias_level(codec, SND_SOC_BIAS_STANDBY);
+
+	/* Restore registers by cached in memory */
+	sgtl5000_restore_regs(codec);
+
+	regcache_cache_only(sgtl5000->regmap, false);
+
+	return 0;
+}
+#else
+#define sgtl5000_suspend NULL
+#define sgtl5000_resume  NULL
+#endif	/* CONFIG_SUSPEND */
+
 /*
  * sgtl5000 has 3 internal power supplies:
  * 1. VAG, normally set to vdda/2
@@ -1376,6 +1460,8 @@ static int sgtl5000_remove(struct snd_soc_codec *codec)
 static struct snd_soc_codec_driver sgtl5000_driver = {
 	.probe = sgtl5000_probe,
 	.remove = sgtl5000_remove,
+	.suspend = sgtl5000_suspend,
+	.resume = sgtl5000_resume,
 	.set_bias_level = sgtl5000_set_bias_level,
 	.suspend_bias_off = true,
 	.controls = sgtl5000_snd_controls,
