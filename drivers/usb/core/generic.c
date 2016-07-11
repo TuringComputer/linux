@@ -43,6 +43,7 @@ static int is_activesync(struct usb_interface_descriptor *desc)
 int usb_choose_configuration(struct usb_device *udev)
 {
 	int i;
+	int devMaxPower;
 	int num_configs;
 	int insufficient_power = 0;
 	struct usb_host_config *c, *best;
@@ -100,9 +101,15 @@ int usb_choose_configuration(struct usb_device *udev)
 		 */
 
 		/* Rule out configs that draw too much bus current */
-		if (usb_get_max_power(udev, c) > udev->bus_mA) {
+		devMaxPower = usb_get_max_power(udev, c);
+		if (devMaxPower > udev->bus_mA) {
+			dev_info(&udev->dev, "configuration #%d requests more power than available on bus "
+					"(requested %dmA from %dmA)\n",	i, devMaxPower, udev->bus_mA);
 			insufficient_power++;
-			continue;
+			// Turing Computer: commenting this line out,
+			// because we know that our hub is self-powered
+			// and this may be miss-interpreted by the bus driver
+			//continue;
 		}
 
 		/* When the first config's first interface is one of Microsoft's
@@ -137,10 +144,13 @@ int usb_choose_configuration(struct usb_device *udev)
 			best = c;
 	}
 
-	if (insufficient_power > 0)
-		dev_info(&udev->dev, "rejected %d configuration%s "
-			"due to insufficient available bus power\n",
-			insufficient_power, plural(insufficient_power));
+	// Turing Computer: commenting this line out,
+	// because we know that our hub is self-powered
+	// and this may be miss-interpreted by the bus driver
+//	if (insufficient_power > 0)
+//		dev_info(&udev->dev, "rejected %d configuration%s "
+//			"due to insufficient available bus power\n",
+//			insufficient_power, plural(insufficient_power));
 
 	if (best) {
 		i = best->desc.bConfigurationValue;
