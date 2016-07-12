@@ -352,7 +352,7 @@
 	pinctrl-0 = <&pinctrl_usdhc1>;
 	bus-width = <4>;
 	cd-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
-	wp-gpios = <&gpio4 20 GPIO_ACTIVE_LOW>;
+	wp-gpios = <&gpio4 20 GPIO_ACTIVE_HIGH>;
 	no-1-8-v;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;

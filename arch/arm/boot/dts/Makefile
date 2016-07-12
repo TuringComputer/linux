@@ -278,6 +278,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6dl-sabresd-btwifi.dtb \
 	imx6dl-sabresd-hdcp.dtb \
 	imx6dl-sabresd-ldo.dtb \
+    imx6dl-turing-eval.dtb \
 	imx6dl-tx6dl-comtft.dtb \
 	imx6dl-tx6u-801x.dtb \
 	imx6dl-tx6u-811x.dtb \
@@ -323,6 +324,7 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6q-sabresd-ldo.dtb \
 	imx6q-sabresd-enetirq.dtb \
 	imx6q-sbc6x.dtb \
+    imx6q-turing-eval.dtb \
 	imx6q-tbs2910.dtb \
 	imx6q-tx6q-1010.dtb \
 	imx6q-tx6q-1010-comtft.dtb \
