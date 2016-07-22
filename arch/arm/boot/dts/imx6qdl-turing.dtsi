@@ -544,7 +544,6 @@
 		reg = <0x48>;
 		interrupt-parent = <&gpio3>;
 		interrupts = <30 0>;
-		gpios = <&gpio3 30 GPIO_ACTIVE_LOW>;
 		ti,x-plate-ohms = <400>;
 	};
 };

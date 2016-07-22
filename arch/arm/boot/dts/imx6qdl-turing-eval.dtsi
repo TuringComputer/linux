@@ -177,6 +177,7 @@
         x-min-interval = <1>;
         x-fs-range = <0>;
         aa-filter-bw = <0>;
+        /*gpios = <&gpio2 5 GPIO_ACTIVE_HIGH>, <&gpio6 7 GPIO_ACTIVE_HIGH>;*/
     };
 
     lsm9ds1-m@0x1E {
@@ -189,6 +190,7 @@
         poll-interval = <100>;
         min-interval = <13>;
         fs-range = <0>;
+        /*gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;*/
     };
 	
 };
