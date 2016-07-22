@@ -118,7 +118,7 @@ static void tsc2007_read_values(struct tsc2007 *tsc, struct ts_event *tc)
 	tc->y = tsc2007_xfer(tsc, READ_Y);
 
 	/* turn y- off, x+ on, then leave in lowpower */
-	tc->x = tsc2007_xfer(tsc, READ_X);
+	tc->x = MAX_12BIT - tsc2007_xfer(tsc, READ_X);
 
 	/* turn y+ off, x- on; we'll use formula #1 */
 	tc->z1 = tsc2007_xfer(tsc, READ_Z1);
@@ -199,8 +199,8 @@ static irqreturn_t tsc2007_soft_irq(int irq, void *handle)
 				tc.x, tc.y, rt);
 
 			input_report_key(input, BTN_TOUCH, 1);
-			input_report_abs(input, ABS_X, tc.x);
-			input_report_abs(input, ABS_Y, tc.y);
+			input_report_abs(input, ABS_Y, tc.x);
+			input_report_abs(input, ABS_X, tc.y);
 			input_report_abs(input, ABS_PRESSURE, rt);
 
 			input_sync(input);
