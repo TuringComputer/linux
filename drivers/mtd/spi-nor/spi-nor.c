@@ -721,12 +721,13 @@ static const struct spi_device_id *spi_nor_read_id(struct spi_nor *nor)
 	for (tmp = 0; tmp < ARRAY_SIZE(spi_nor_ids) - 1; tmp++) {
 		info = (void *)spi_nor_ids[tmp].driver_data;
 		if (info->id_len) {
-			if (!memcmp(info->id, id, info->id_len))
+			if (!memcmp(info->id, id, info->id_len)) {
+				dev_info(nor->dev, "found JEDEC device: %02x, %02x, %02x\n", id[0], id[1], id[2]);
 				return &spi_nor_ids[tmp];
+			}
 		}
 	}
-	dev_err(nor->dev, "unrecognized JEDEC id bytes: %02x, %2x, %2x\n",
-		id[0], id[1], id[2]);
+	dev_err(nor->dev, "unrecognized JEDEC id bytes: %02x, %02x, %02x\n", id[0], id[1], id[2]);
 	return ERR_PTR(-ENODEV);
 }
 
