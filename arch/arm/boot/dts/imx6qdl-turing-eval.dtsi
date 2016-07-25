@@ -213,12 +213,12 @@
 
 &ecspi1 {
 	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio3 19 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio6 16 GPIO_ACTIVE_HIGH>;
 
-	flash: m25p32@0 {
+	flash: m25p80@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "st,m25p32", "st,m25p";
+		compatible = "st,m25p32";
 		spi-max-frequency = <20000000>;
 		reg = <0>;
 	};
