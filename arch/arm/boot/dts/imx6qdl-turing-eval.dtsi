@@ -25,10 +25,6 @@
 			clock-frequency = <12288000>;
 		};
 	};
-
-    chosen {
-		stdout-path = &uart4;
-	};
 	
 	leds {
 		compatible = "gpio-leds";
@@ -154,7 +150,9 @@
 			reg = <2>;
 			regulator-name = "osc-ckih1-enable";
 			gpio = <&gpio6 17 GPIO_ACTIVE_HIGH>;
-			regulator-always-on;
+			enable-active-high;
+			regulator-boot-on;
+			regulator-off-in-suspend;
 		};
 	};
 };
