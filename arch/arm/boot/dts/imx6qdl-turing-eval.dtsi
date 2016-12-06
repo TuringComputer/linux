@@ -281,5 +281,5 @@
 };
 
 &usdhc3 {
-	max-frequency = <20000000>;
+	max-frequency = <50000000>;
 };

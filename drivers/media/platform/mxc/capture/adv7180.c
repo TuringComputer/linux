@@ -43,6 +43,9 @@ static struct regulator *dvdd_regulator;
 static struct regulator *avdd_regulator;
 static struct regulator *pvdd_regulator;
 static int pwn_gpio;
+static int ain1_gpio;
+static int ain2_gpio;
+static int ain3_gpio;
 
 static int adv7180_probe(struct i2c_client *adapter,
 			 const struct i2c_device_id *id);
@@ -65,12 +68,24 @@ static struct i2c_driver adv7180_i2c_driver = {
 	.id_table = adv7180_id,
 };
 
+/**
+ * When running in CVBS mode, ADV7180 can multiplex
+ *  3 different analog input sources.
+ */
+enum v4l2_adv7180_inputs_t {
+	ADV7180_AIN1 = 1,
+	ADV7180_AIN2,
+	ADV7180_AIN3
+};
+
 /*!
  * Maintains the information on the current state of the sensor.
  */
 struct sensor {
 	struct sensor_data sen;
 	v4l2_std_id std_id;
+	bool cvbs;
+	enum v4l2_adv7180_inputs_t input;
 } adv7180_data;
 
 
@@ -128,7 +143,7 @@ static video_fmt_t video_fmts[] = {
 	 .raw_height = 625,
 	 .active_width = 720,
 	 .active_height = 576,
-	 .frame_rate = 0,
+	 .frame_rate = 25,
 	 },
 };
 
@@ -152,6 +167,8 @@ static DEFINE_MUTEX(mutex);
 #define ADV7180_MANUAL_WIN_CTL         0x3d	/* Manual Window Control */
 #define ADV7180_SD_SATURATION_CB       0xe3	/* SD Saturation Cb */
 #define ADV7180_SD_SATURATION_CR       0xe4	/* SD Saturation Cr */
+#define ADV7180_ADC_SWITCH1            0xC3
+#define ADV7180_ADC_SWITCH2            0xC4
 #define ADV7180_PWR_MNG                0x0f     /* Power Management */
 
 /* supported controls */
@@ -159,23 +176,34 @@ static DEFINE_MUTEX(mutex);
  * This is how it should work, though. */
 static struct v4l2_queryctrl adv7180_qctrl[] = {
 	{
-	.id = V4L2_CID_BRIGHTNESS,
-	.type = V4L2_CTRL_TYPE_INTEGER,
-	.name = "Brightness",
-	.minimum = 0,		/* check this value */
-	.maximum = 255,		/* check this value */
-	.step = 1,		/* check this value */
-	.default_value = 127,	/* check this value */
-	.flags = 0,
-	}, {
-	.id = V4L2_CID_SATURATION,
-	.type = V4L2_CTRL_TYPE_INTEGER,
-	.name = "Saturation",
-	.minimum = 0,		/* check this value */
-	.maximum = 255,		/* check this value */
-	.step = 0x1,		/* check this value */
-	.default_value = 127,	/* check this value */
-	.flags = 0,
+		.id = V4L2_CID_BRIGHTNESS,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Brightness",
+		.minimum = 0,			/* check this value */
+		.maximum = 255,			/* check this value */
+		.step = 1,				/* check this value */
+		.default_value = 127,	/* check this value */
+		.flags = 0,
+	},
+	{
+		.id = V4L2_CID_SATURATION,
+		.type = V4L2_CTRL_TYPE_INTEGER,
+		.name = "Saturation",
+		.minimum = 0,			/* check this value */
+		.maximum = 255,			/* check this value */
+		.step = 0x1,			/* check this value */
+		.default_value = 127,	/* check this value */
+		.flags = 0,
+	},
+	{
+		.id = V4L2_CID_SELECT_INPUT,
+		.type = V4L2_CTRL_TYPE_MENU,
+		.name = "Input Source",
+		.minimum = ADV7180_AIN1,
+		.maximum = ADV7180_AIN3,
+		.step = 0x1,
+		.default_value = ADV7180_AIN1,	/* check this value */
+		.flags = 0,
 	}
 };
 
@@ -301,6 +329,86 @@ static int adv7180_write_reg(u8 reg, u8 val)
 	return 0;
 }
 
+static int adv7180_set_input_source(enum v4l2_adv7180_inputs_t input)
+{
+	int adc1 = 0;
+	int adc2 = 0;
+	int ret = 0;
+
+	if(!adv7180_data.cvbs)
+	{
+		dev_err(&adv7180_data.sen.i2c_client->dev, "selecting input source is only available in cvbs mode!");
+		return -EPERM;
+	}
+
+	switch (input)
+	{
+		case ADV7180_AIN1:
+			adc1 = 0x01;
+			adc2 = 0x80;
+			if (gpio_is_valid(ain1_gpio))
+			{
+				gpio_set_value_cansleep(ain1_gpio, 1);
+			}
+			if (gpio_is_valid(ain2_gpio))
+			{
+				gpio_set_value_cansleep(ain2_gpio, 0);
+			}
+			if (gpio_is_valid(ain3_gpio))
+			{
+				gpio_set_value_cansleep(ain3_gpio, 0);
+			}
+			break;
+		case ADV7180_AIN2:
+			adc1 = 0x44;
+			adc2 = 0x80;
+			if (gpio_is_valid(ain1_gpio))
+			{
+				gpio_set_value_cansleep(ain1_gpio, 0);
+			}
+			if (gpio_is_valid(ain2_gpio))
+			{
+				gpio_set_value_cansleep(ain2_gpio, 1);
+			}
+			if (gpio_is_valid(ain3_gpio))
+			{
+				gpio_set_value_cansleep(ain3_gpio, 0);
+			}
+			break;
+		case ADV7180_AIN3:
+			adc1 = 0x55;
+			adc2 = 0x85;
+			if (gpio_is_valid(ain1_gpio))
+			{
+				gpio_set_value_cansleep(ain1_gpio, 0);
+			}
+			if (gpio_is_valid(ain2_gpio))
+			{
+				gpio_set_value_cansleep(ain2_gpio, 0);
+			}
+			if (gpio_is_valid(ain3_gpio))
+			{
+				gpio_set_value_cansleep(ain3_gpio, 1);
+			}
+			break;
+		default:
+			return -EINVAL;
+	}
+
+	ret |= adv7180_write_reg(ADV7180_ADC_SWITCH1, adc1);
+	ret |= adv7180_write_reg(ADV7180_ADC_SWITCH2, adc2);
+
+	if(ret) {
+		dev_err(&adv7180_data.sen.i2c_client->dev, "error while selecting input source: %d", ret);
+		return ret;
+	}
+
+	dev_dbg(&adv7180_data.sen.i2c_client->dev, "selected input source %d", input);
+	adv7180_data.input = input;
+	msleep(100);
+	return 0;
+}
+
 /***********************************************************************
  * mxc_v4l2_capture interface.
  ***********************************************************************/
@@ -319,6 +427,8 @@ static void adv7180_get_std(v4l2_std_id *std)
 	bool locked;
 
 	dev_dbg(&adv7180_data.sen.i2c_client->dev, "In adv7180_get_std\n");
+
+	mdelay(250);
 
 	status_1 = adv7180_read(ADV7180_STATUS_1);
 	locked = status_1 & 0x1;
@@ -404,7 +514,7 @@ static int ioctl_s_power(struct v4l2_int_device *s, int on)
 {
 	struct sensor *sensor = s->priv;
 
-	dev_dbg(&adv7180_data.sen.i2c_client->dev, "adv7180:ioctl_s_power\n");
+	dev_dbg(&adv7180_data.sen.i2c_client->dev, "adv7180:ioctl_s_power: %d\n", on);
 
 	if (on && !sensor->sen.on) {
 		if (adv7180_write_reg(ADV7180_PWR_MNG, 0x04) != 0)
@@ -421,6 +531,26 @@ static int ioctl_s_power(struct v4l2_int_device *s, int on)
 	}
 
 	sensor->sen.on = on;
+
+	if(on)
+	{
+		adv7180_set_input_source(adv7180_data.input);
+	}
+	else
+	{
+		if (gpio_is_valid(ain1_gpio))
+		{
+			gpio_set_value_cansleep(ain1_gpio, 0);
+		}
+		if (gpio_is_valid(ain2_gpio))
+		{
+			gpio_set_value_cansleep(ain2_gpio, 0);
+		}
+		if (gpio_is_valid(ain3_gpio))
+		{
+			gpio_set_value_cansleep(ain3_gpio, 0);
+		}
+	}
 
 	return 0;
 }
@@ -580,74 +710,47 @@ static int ioctl_g_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 
 	switch (vc->id) {
 	case V4L2_CID_BRIGHTNESS:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_BRIGHTNESS\n");
 		adv7180_data.sen.brightness = adv7180_read(ADV7180_BRIGHTNESS);
 		vc->value = adv7180_data.sen.brightness;
 		break;
 	case V4L2_CID_CONTRAST:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_CONTRAST\n");
 		vc->value = adv7180_data.sen.contrast;
 		break;
 	case V4L2_CID_SATURATION:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_SATURATION\n");
 		sat = adv7180_read(ADV7180_SD_SATURATION_CB);
 		adv7180_data.sen.saturation = sat;
 		vc->value = adv7180_data.sen.saturation;
 		break;
 	case V4L2_CID_HUE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_HUE\n");
 		vc->value = adv7180_data.sen.hue;
 		break;
 	case V4L2_CID_AUTO_WHITE_BALANCE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_AUTO_WHITE_BALANCE\n");
 		break;
 	case V4L2_CID_DO_WHITE_BALANCE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_DO_WHITE_BALANCE\n");
 		break;
 	case V4L2_CID_RED_BALANCE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_RED_BALANCE\n");
 		vc->value = adv7180_data.sen.red;
 		break;
 	case V4L2_CID_BLUE_BALANCE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_BLUE_BALANCE\n");
 		vc->value = adv7180_data.sen.blue;
 		break;
 	case V4L2_CID_GAMMA:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_GAMMA\n");
 		break;
 	case V4L2_CID_EXPOSURE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_EXPOSURE\n");
 		vc->value = adv7180_data.sen.ae_mode;
 		break;
 	case V4L2_CID_AUTOGAIN:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_AUTOGAIN\n");
 		break;
 	case V4L2_CID_GAIN:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_GAIN\n");
 		break;
 	case V4L2_CID_HFLIP:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_HFLIP\n");
 		break;
 	case V4L2_CID_VFLIP:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_VFLIP\n");
+		break;
+	case V4L2_CID_SELECT_INPUT:
+		vc->value = (int) adv7180_data.input;
 		break;
 	default:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   Default case\n");
 		vc->value = 0;
 		ret = -EPERM;
 		break;
@@ -674,71 +777,44 @@ static int ioctl_s_ctrl(struct v4l2_int_device *s, struct v4l2_control *vc)
 
 	switch (vc->id) {
 	case V4L2_CID_BRIGHTNESS:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_BRIGHTNESS\n");
 		tmp = vc->value;
 		adv7180_write_reg(ADV7180_BRIGHTNESS, tmp);
 		adv7180_data.sen.brightness = vc->value;
 		break;
 	case V4L2_CID_CONTRAST:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_CONTRAST\n");
 		break;
 	case V4L2_CID_SATURATION:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_SATURATION\n");
 		tmp = vc->value;
 		adv7180_write_reg(ADV7180_SD_SATURATION_CB, tmp);
 		adv7180_write_reg(ADV7180_SD_SATURATION_CR, tmp);
 		adv7180_data.sen.saturation = vc->value;
 		break;
 	case V4L2_CID_HUE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_HUE\n");
 		break;
 	case V4L2_CID_AUTO_WHITE_BALANCE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_AUTO_WHITE_BALANCE\n");
 		break;
 	case V4L2_CID_DO_WHITE_BALANCE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_DO_WHITE_BALANCE\n");
 		break;
 	case V4L2_CID_RED_BALANCE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_RED_BALANCE\n");
 		break;
 	case V4L2_CID_BLUE_BALANCE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_BLUE_BALANCE\n");
 		break;
 	case V4L2_CID_GAMMA:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_GAMMA\n");
 		break;
 	case V4L2_CID_EXPOSURE:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_EXPOSURE\n");
 		break;
 	case V4L2_CID_AUTOGAIN:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_AUTOGAIN\n");
 		break;
 	case V4L2_CID_GAIN:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_GAIN\n");
 		break;
 	case V4L2_CID_HFLIP:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_HFLIP\n");
 		break;
 	case V4L2_CID_VFLIP:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   V4L2_CID_VFLIP\n");
+		break;
+	case V4L2_CID_SELECT_INPUT:
+		retval = adv7180_set_input_source((enum v4l2_adv7180_inputs_t) vc->value);
 		break;
 	default:
-		dev_dbg(&adv7180_data.sen.i2c_client->dev,
-			"   Default case\n");
 		retval = -EPERM;
 		break;
 	}
@@ -923,6 +999,8 @@ static void adv7180_hard_reset(bool cvbs)
 	dev_dbg(&adv7180_data.sen.i2c_client->dev,
 		"In adv7180:adv7180_hard_reset\n");
 
+	adv7180_data.cvbs = cvbs;
+
 	if (cvbs) {
 		/* Set CVBS input on AIN1 */
 		adv7180_write_reg(ADV7180_INPUT_CTL, 0x00);
@@ -935,244 +1013,8 @@ static void adv7180_hard_reset(bool cvbs)
 	}
 
 	/* Datasheet recommends */
-	adv7180_write_reg(0x01, 0xc8);
-	adv7180_write_reg(0x02, 0x04);
-	adv7180_write_reg(0x03, 0x00);
-	adv7180_write_reg(0x04, 0x45);
-	adv7180_write_reg(0x05, 0x00);
-	adv7180_write_reg(0x06, 0x02);
-	adv7180_write_reg(0x07, 0x7F);
-	adv7180_write_reg(0x08, 0x80);
-	adv7180_write_reg(0x0A, 0x00);
-	adv7180_write_reg(0x0B, 0x00);
-	adv7180_write_reg(0x0C, 0x36);
-	adv7180_write_reg(0x0D, 0x7C);
-	adv7180_write_reg(0x0E, 0x00);
-	adv7180_write_reg(0x0F, 0x00);
-	adv7180_write_reg(0x13, 0x00);
-	adv7180_write_reg(0x14, 0x12);
-	adv7180_write_reg(0x15, 0x00);
-	adv7180_write_reg(0x16, 0x00);
-	adv7180_write_reg(0x17, 0x01);
-	adv7180_write_reg(0x18, 0x93);
-	adv7180_write_reg(0xF1, 0x19);
-	adv7180_write_reg(0x1A, 0x00);
-	adv7180_write_reg(0x1B, 0x00);
-	adv7180_write_reg(0x1C, 0x00);
-	adv7180_write_reg(0x1D, 0x40);
-	adv7180_write_reg(0x1E, 0x00);
-	adv7180_write_reg(0x1F, 0x00);
-	adv7180_write_reg(0x20, 0x00);
-	adv7180_write_reg(0x21, 0x00);
-	adv7180_write_reg(0x22, 0x00);
-	adv7180_write_reg(0x23, 0xC0);
-	adv7180_write_reg(0x24, 0x00);
-	adv7180_write_reg(0x25, 0x00);
-	adv7180_write_reg(0x26, 0x00);
-	adv7180_write_reg(0x27, 0x58);
-	adv7180_write_reg(0x28, 0x00);
-	adv7180_write_reg(0x29, 0x00);
-	adv7180_write_reg(0x2A, 0x00);
-	adv7180_write_reg(0x2B, 0xE1);
-	adv7180_write_reg(0x2C, 0xAE);
-	adv7180_write_reg(0x2D, 0xF4);
-	adv7180_write_reg(0x2E, 0x00);
-	adv7180_write_reg(0x2F, 0xF0);
-	adv7180_write_reg(0x30, 0x00);
-	adv7180_write_reg(0x31, 0x12);
-	adv7180_write_reg(0x32, 0x41);
-	adv7180_write_reg(0x33, 0x84);
-	adv7180_write_reg(0x34, 0x00);
-	adv7180_write_reg(0x35, 0x02);
-	adv7180_write_reg(0x36, 0x00);
-	adv7180_write_reg(0x37, 0x01);
-	adv7180_write_reg(0x38, 0x80);
-	adv7180_write_reg(0x39, 0xC0);
-	adv7180_write_reg(0x3A, 0x10);
-	adv7180_write_reg(0x3B, 0x05);
-	adv7180_write_reg(0x3C, 0x58);
-	adv7180_write_reg(0x3D, 0xB2);
-	adv7180_write_reg(0x3E, 0x64);
-	adv7180_write_reg(0x3F, 0xE4);
-	adv7180_write_reg(0x40, 0x90);
-	adv7180_write_reg(0x41, 0x01);
-	adv7180_write_reg(0x42, 0x7E);
-	adv7180_write_reg(0x43, 0xA4);
-	adv7180_write_reg(0x44, 0xFF);
-	adv7180_write_reg(0x45, 0xB6);
-	adv7180_write_reg(0x46, 0x12);
-	adv7180_write_reg(0x48, 0x00);
-	adv7180_write_reg(0x49, 0x00);
-	adv7180_write_reg(0x4A, 0x00);
-	adv7180_write_reg(0x4B, 0x00);
-	adv7180_write_reg(0x4C, 0x00);
-	adv7180_write_reg(0x4D, 0xEF);
-	adv7180_write_reg(0x4E, 0x08);
-	adv7180_write_reg(0x4F, 0x08);
-	adv7180_write_reg(0x50, 0x08);
-	adv7180_write_reg(0x51, 0x24);
-	adv7180_write_reg(0x52, 0x0B);
-	adv7180_write_reg(0x53, 0x4E);
-	adv7180_write_reg(0x54, 0x80);
-	adv7180_write_reg(0x55, 0x00);
-	adv7180_write_reg(0x56, 0x10);
-	adv7180_write_reg(0x57, 0x00);
-	adv7180_write_reg(0x58, 0x00);
-	adv7180_write_reg(0x59, 0x00);
-	adv7180_write_reg(0x5A, 0x00);
-	adv7180_write_reg(0x5B, 0x00);
-	adv7180_write_reg(0x5C, 0x00);
-	adv7180_write_reg(0x5D, 0x00);
-	adv7180_write_reg(0x5E, 0x00);
-	adv7180_write_reg(0x5F, 0x00);
-	adv7180_write_reg(0x60, 0x00);
-	adv7180_write_reg(0x61, 0x00);
-	adv7180_write_reg(0x62, 0x20);
-	adv7180_write_reg(0x63, 0x00);
-	adv7180_write_reg(0x64, 0x00);
-	adv7180_write_reg(0x65, 0x00);
-	adv7180_write_reg(0x66, 0x00);
-	adv7180_write_reg(0x67, 0x03);
-	adv7180_write_reg(0x68, 0x01);
-	adv7180_write_reg(0x69, 0x00);
-	adv7180_write_reg(0x6A, 0x00);
-	adv7180_write_reg(0x6B, 0xC0);
-	adv7180_write_reg(0x6C, 0x00);
-	adv7180_write_reg(0x6D, 0x00);
-	adv7180_write_reg(0x6E, 0x00);
-	adv7180_write_reg(0x6F, 0x00);
-	adv7180_write_reg(0x70, 0x00);
-	adv7180_write_reg(0x71, 0x00);
-	adv7180_write_reg(0x72, 0x00);
-	adv7180_write_reg(0x73, 0x10);
-	adv7180_write_reg(0x74, 0x04);
-	adv7180_write_reg(0x75, 0x01);
-	adv7180_write_reg(0x76, 0x00);
-	adv7180_write_reg(0x77, 0x3F);
-	adv7180_write_reg(0x78, 0xFF);
-	adv7180_write_reg(0x79, 0xFF);
-	adv7180_write_reg(0x7A, 0xFF);
-	adv7180_write_reg(0x7B, 0x1E);
-	adv7180_write_reg(0x7C, 0xC0);
-	adv7180_write_reg(0x7D, 0x00);
-	adv7180_write_reg(0x7E, 0x00);
-	adv7180_write_reg(0x7F, 0x00);
-	adv7180_write_reg(0x80, 0x00);
-	adv7180_write_reg(0x81, 0xC0);
-	adv7180_write_reg(0x82, 0x04);
-	adv7180_write_reg(0x83, 0x00);
-	adv7180_write_reg(0x84, 0x0C);
-	adv7180_write_reg(0x85, 0x02);
-	adv7180_write_reg(0x86, 0x03);
-	adv7180_write_reg(0x87, 0x63);
-	adv7180_write_reg(0x88, 0x5A);
-	adv7180_write_reg(0x89, 0x08);
-	adv7180_write_reg(0x8A, 0x10);
-	adv7180_write_reg(0x8B, 0x00);
-	adv7180_write_reg(0x8C, 0x40);
-	adv7180_write_reg(0x8D, 0x00);
-	adv7180_write_reg(0x8E, 0x40);
-	adv7180_write_reg(0x8F, 0x00);
-	adv7180_write_reg(0x90, 0x00);
-	adv7180_write_reg(0x91, 0x50);
-	adv7180_write_reg(0x92, 0x00);
-	adv7180_write_reg(0x93, 0x00);
-	adv7180_write_reg(0x94, 0x00);
-	adv7180_write_reg(0x95, 0x00);
-	adv7180_write_reg(0x96, 0x00);
-	adv7180_write_reg(0x97, 0xF0);
-	adv7180_write_reg(0x98, 0x00);
-	adv7180_write_reg(0x99, 0x00);
-	adv7180_write_reg(0x9A, 0x00);
-	adv7180_write_reg(0x9B, 0x00);
-	adv7180_write_reg(0x9C, 0x00);
-	adv7180_write_reg(0x9D, 0x00);
-	adv7180_write_reg(0x9E, 0x00);
-	adv7180_write_reg(0x9F, 0x00);
-	adv7180_write_reg(0xA0, 0x00);
-	adv7180_write_reg(0xA1, 0x00);
-	adv7180_write_reg(0xA2, 0x00);
-	adv7180_write_reg(0xA3, 0x00);
-	adv7180_write_reg(0xA4, 0x00);
-	adv7180_write_reg(0xA5, 0x00);
-	adv7180_write_reg(0xA6, 0x00);
-	adv7180_write_reg(0xA7, 0x00);
-	adv7180_write_reg(0xA8, 0x00);
-	adv7180_write_reg(0xA9, 0x00);
-	adv7180_write_reg(0xAA, 0x00);
-	adv7180_write_reg(0xAB, 0x00);
-	adv7180_write_reg(0xAC, 0x00);
-	adv7180_write_reg(0xAD, 0x00);
-	adv7180_write_reg(0xAE, 0x60);
-	adv7180_write_reg(0xAF, 0x00);
-	adv7180_write_reg(0xB0, 0x00);
-	adv7180_write_reg(0xB1, 0x60);
-	adv7180_write_reg(0xB2, 0x1C);
-	adv7180_write_reg(0xB3, 0x54);
-	adv7180_write_reg(0xB4, 0x00);
-	adv7180_write_reg(0xB5, 0x00);
-	adv7180_write_reg(0xB6, 0x00);
-	adv7180_write_reg(0xB7, 0x13);
-	adv7180_write_reg(0xB8, 0x03);
-	adv7180_write_reg(0xB9, 0x33);
-	adv7180_write_reg(0xBF, 0x02);
-	adv7180_write_reg(0xC0, 0x00);
-	adv7180_write_reg(0xC1, 0x00);
-	adv7180_write_reg(0xC2, 0x00);
-	adv7180_write_reg(0xC3, 0x00);
-	adv7180_write_reg(0xC4, 0x00);
-	adv7180_write_reg(0xC5, 0x81);
-	adv7180_write_reg(0xC6, 0x00);
-	adv7180_write_reg(0xC7, 0x00);
-	adv7180_write_reg(0xC8, 0x00);
-	adv7180_write_reg(0xC9, 0x04);
-	adv7180_write_reg(0xCC, 0x69);
-	adv7180_write_reg(0xCD, 0x00);
-	adv7180_write_reg(0xCE, 0x01);
-	adv7180_write_reg(0xCF, 0xB4);
-	adv7180_write_reg(0xD0, 0x00);
-	adv7180_write_reg(0xD1, 0x10);
-	adv7180_write_reg(0xD2, 0xFF);
-	adv7180_write_reg(0xD3, 0xFF);
-	adv7180_write_reg(0xD4, 0x7F);
-	adv7180_write_reg(0xD5, 0x7F);
-	adv7180_write_reg(0xD6, 0x3E);
-	adv7180_write_reg(0xD7, 0x08);
-	adv7180_write_reg(0xD8, 0x3C);
-	adv7180_write_reg(0xD9, 0x08);
-	adv7180_write_reg(0xDA, 0x3C);
-	adv7180_write_reg(0xDB, 0x9B);
-	adv7180_write_reg(0xDC, 0xAC);
-	adv7180_write_reg(0xDD, 0x4C);
-	adv7180_write_reg(0xDE, 0x00);
-	adv7180_write_reg(0xDF, 0x00);
-	adv7180_write_reg(0xE0, 0x14);
-	adv7180_write_reg(0xE1, 0x80);
-	adv7180_write_reg(0xE2, 0x80);
-	adv7180_write_reg(0xE3, 0x80);
-	adv7180_write_reg(0xE4, 0x80);
-	adv7180_write_reg(0xE5, 0x25);
-	adv7180_write_reg(0xE6, 0x44);
-	adv7180_write_reg(0xE7, 0x63);
-	adv7180_write_reg(0xE8, 0x65);
-	adv7180_write_reg(0xE9, 0x14);
-	adv7180_write_reg(0xEA, 0x63);
-	adv7180_write_reg(0xEB, 0x55);
-	adv7180_write_reg(0xEC, 0x55);
-	adv7180_write_reg(0xEE, 0x00);
-	adv7180_write_reg(0xEF, 0x4A);
-	adv7180_write_reg(0xF0, 0x44);
-	adv7180_write_reg(0xF1, 0x0C);
-	adv7180_write_reg(0xF2, 0x32);
-	adv7180_write_reg(0xF3, 0x00);
-	adv7180_write_reg(0xF4, 0x3F);
-	adv7180_write_reg(0xF5, 0xE0);
-	adv7180_write_reg(0xF6, 0x69);
-	adv7180_write_reg(0xF7, 0x10);
-	adv7180_write_reg(0xF8, 0x00);
-	adv7180_write_reg(0xF9, 0x03);
-	adv7180_write_reg(0xFA, 0xFA);
-	adv7180_write_reg(0xFB, 0x40);
+	adv7180_write_reg(ADV7180_VSYNC_FIELD_CTL_1, 0x02);
+	adv7180_write_reg(ADV7180_MANUAL_WIN_CTL, 0xa2);
 }
 
 /*! ADV7180 I2C attach function.
@@ -1211,15 +1053,67 @@ static int adv7180_probe(struct i2c_client *client,
 
 	/* request power down pin */
 	pwn_gpio = of_get_named_gpio(dev->of_node, "pwn-gpios", 0);
-	if (!gpio_is_valid(pwn_gpio)) {
+	if (!gpio_is_valid(pwn_gpio))
+	{
 		dev_err(dev, "no sensor pwdn pin available\n");
 		return -ENODEV;
 	}
-	ret = devm_gpio_request_one(dev, pwn_gpio, GPIOF_OUT_INIT_HIGH,
-					"adv7180_pwdn");
-	if (ret < 0) {
+	ret = devm_gpio_request_one(dev, pwn_gpio, GPIOF_OUT_INIT_HIGH,	"adv7180_pwdn");
+	if (ret < 0)
+	{
 		dev_err(dev, "no power pin available!\n");
 		return ret;
+	}
+
+	ain1_gpio = of_get_named_gpio(dev->of_node, "ain1-gpio", 0);
+	if (!gpio_is_valid(ain1_gpio))
+	{
+		dev_warn(dev, "no ain1 pin available\n");
+	}
+	else
+	{
+		dev_info(&client->dev, "ain1 on gpio pin %d\n", ain1_gpio);
+		ret = devm_gpio_request_one(dev, ain1_gpio, GPIOF_OUT_INIT_HIGH, "adv7180-ain1-gpio");
+		if (ret < 0)
+		{
+			dev_err(dev, "no ain1 pin available!\n");
+			return ret;
+		}
+		gpio_set_value_cansleep(ain1_gpio, 0);
+	}
+
+	ain2_gpio = of_get_named_gpio(dev->of_node, "ain2-gpio", 0);
+	if (!gpio_is_valid(ain2_gpio))
+	{
+		dev_warn(dev, "no ain2 pin available\n");
+	}
+	else
+	{
+		dev_info(&client->dev, "ain2 on gpio pin %d\n", ain2_gpio);
+		ret = devm_gpio_request_one(dev, ain2_gpio, GPIOF_OUT_INIT_HIGH, "adv7180-ain2-gpio");
+		if (ret < 0)
+		{
+			dev_err(dev, "no ain2 pin available!\n");
+			return ret;
+		}
+		gpio_set_value_cansleep(ain2_gpio, 0);
+	}
+
+	ain3_gpio = of_get_named_gpio(dev->of_node, "ain3-gpio", 0);
+	if (!gpio_is_valid(ain3_gpio))
+	{
+		dev_warn(dev, "no ain3 pin available\n");
+	}
+	else
+	{
+		dev_info(&client->dev, "ain3 on gpio pin %d\n", ain3_gpio);
+		ret = devm_gpio_request_one(dev, ain3_gpio, GPIOF_OUT_INIT_HIGH, "adv7180-ain3-gpio");
+		if (ret < 0)
+		{
+			dev_err(dev, "no ain3 pin available!\n");
+			return ret;
+		}
+		gpio_set_value_cansleep(ain3_gpio, 0);
 	}
 
 	adv7180_regulator_enable(dev);
@@ -1240,6 +1134,7 @@ static int adv7180_probe(struct i2c_client *client,
 	adv7180_data.sen.pix.pixelformat = V4L2_PIX_FMT_UYVY;  /* YUV422 */
 	adv7180_data.sen.pix.priv = 1;  /* 1 is used to indicate TV in */
 	adv7180_data.sen.on = true;
+	adv7180_data.input = ADV7180_AIN1;
 
 	adv7180_data.sen.sensor_clk = devm_clk_get(dev, "csi_mclk");
 	if (IS_ERR(adv7180_data.sen.sensor_clk)) {
@@ -1277,7 +1172,7 @@ static int adv7180_probe(struct i2c_client *client,
 
 	/*! Read the revision ID of the tvin chip */
 	rev_id = adv7180_read(ADV7180_IDENT);
-	dev_dbg(dev,
+	dev_info(dev,
 		"%s:Analog Device adv7%2X0 detected!\n", __func__,
 		rev_id);
 
@@ -1290,9 +1185,9 @@ static int adv7180_probe(struct i2c_client *client,
 	/*! ADV7180 initialization. */
 	adv7180_hard_reset(cvbs);
 
-	pr_debug("   type is %d (expect %d)\n",
+	pr_info("   type is %d (expect %d)\n",
 		 adv7180_int_device.type, v4l2_int_type_slave);
-	pr_debug("   num ioctls is %d\n",
+	pr_info("   num ioctls is %d\n",
 		 adv7180_int_device.u.slave->num_ioctls);
 
 	/* This function attaches this structure to the /dev/video0 device.

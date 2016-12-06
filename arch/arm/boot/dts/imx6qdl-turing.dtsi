@@ -36,7 +36,8 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_ipu>;
 	};
-
+	
+	// Parallel CSI
 	v4l2_cap_0 {
 		compatible = "fsl,imx6q-v4l2-capture";
 		ipu_id = <0>;
@@ -45,6 +46,7 @@
 		status = "okay";
 	};
 
+	// MIPI CSI
 	v4l2_cap_1 {
 		compatible = "fsl,imx6q-v4l2-capture";
 		ipu_id = <0>;
@@ -65,13 +67,6 @@
 	pinctrl-0 = <&pinctrl_hog>;
 
 	imx6qdl-turing {
-	
-		pinctrl_uart1: pinmux-uart1 {
-			fsl,pins = <
-				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
-				MX6QDL_PAD_KEY_ROW0__UART4_RX_DATA	0x1b0b1
-			>;
-		};
 
 		pinctrl_uart2: pinmux-uart2 {
 			fsl,pins = <
@@ -86,6 +81,13 @@
 				MX6QDL_PAD_EIM_D24__UART3_TX_DATA	0x1b0b1
 				MX6QDL_PAD_EIM_D25__UART3_RX_DATA	0x1b0b1
 				MX6QDL_PAD_EIM_D31__UART3_RTS_B		0x1b0b1
+			>;
+		};
+		
+		pinctrl_uart4: pinmux-uart4 {
+			fsl,pins = <
+				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
+				MX6QDL_PAD_KEY_ROW0__UART4_RX_DATA	0x1b0b1
 			>;
 		};
 
@@ -321,9 +323,9 @@
 	};
 };
 
-&uart1 {
+&uart4 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1>;
+	pinctrl-0 = <&pinctrl_uart4>;
 	status = "okay";
 };
 

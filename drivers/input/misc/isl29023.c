@@ -23,6 +23,7 @@
 #include <linux/slab.h>
 #include <linux/i2c.h>
 #include <linux/input.h>
+#include <linux/input-polldev.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/mutex.h>
@@ -59,10 +60,15 @@
 #define DEF_RANGE			2
 #define DEFAULT_REGISTOR_VAL		499
 
+#define POLL_INTERVAL_MIN			20
+#define POLL_INTERVAL_MAX			200
+#define POLL_INTERVAL				100
+
 struct isl29023_data {
 	struct i2c_client *client;
 	struct mutex lock;
 	struct input_dev *input;
+	struct input_polled_dev	*input_polled;
 	struct work_struct work;
 	struct workqueue_struct *workqueue;
 	char phys[32];
@@ -303,7 +309,7 @@ static int isl29023_set_power_state(struct i2c_client *client, int state)
 	return __isl29023_write_reg(client, ISL29023_COMMAND1,
 				ISL29023_MODE_MASK, ISL29023_MODE_SHIFT,
 				state ?
-				ISL29023_ALS_ONCE_MODE : ISL29023_PD_MODE);
+						ISL29023_ALS_CONT_MODE : ISL29023_PD_MODE);
 }
 
 static int isl29023_get_power_state(struct i2c_client *client)
@@ -842,39 +848,65 @@ static int isl29023_init_client(struct i2c_client *client)
 	}
 
 	/* set defaults */
-	isl29023_set_int_persists(client, ISL29023_INT_PERSISTS_8);
-	isl29023_set_int_ht(client, 0xffff);
-	isl29023_set_int_lt(client, 0x0);
+	if(client->irq)
+	{
+		isl29023_set_int_persists(client, ISL29023_INT_PERSISTS_8);
+		isl29023_set_int_ht(client, 0xffff);
+		isl29023_set_int_lt(client, 0x0);
+		isl29023_set_int_flag(client, 0);
+	}
 	isl29023_set_range(client, ISL29023_RANGE_16K);
 	isl29023_set_resolution(client, ISL29023_RES_16);
 	isl29023_set_mode(client, ISL29023_ALS_ONCE_MODE);
-	isl29023_set_int_flag(client, 0);
 	isl29023_set_power_state(client, 0);
 
 	return 0;
 }
 
-static void isl29023_work(struct work_struct *work)
+static void isl29023_update_input(struct isl29023_data *data)
 {
-	struct isl29023_data *data =
-			container_of(work, struct isl29023_data, work);
 	struct i2c_client *client = data->client;
 	int lux;
 
 	/* Clear interrupt flag */
-	isl29023_set_int_flag(client, 0);
+	if(client->irq)
+	{
+		isl29023_set_int_flag(client, 0);
+		data->mode_before_interrupt = isl29023_get_mode(client);
+	}
 
-	data->mode_before_interrupt = isl29023_get_mode(client);
 	lux = isl29023_get_adc_value(client);
 
 	/* To clear the interrpt status */
-	isl29023_set_power_state(client, ISL29023_PD_MODE);
-	isl29023_set_mode(client, data->mode_before_interrupt);
+	if(client->irq)
+	{
+		isl29023_set_power_state(client, ISL29023_PD_MODE);
+		isl29023_set_mode(client, data->mode_before_interrupt);
+		msleep(100);
+	}
 
-	msleep(100);
+	if(client->irq)
+	{
+		input_report_abs(data->input, ABS_MISC, lux);
+		input_sync(data->input);
+	}
+	else
+	{
+		input_report_abs(data->input_polled->input, ABS_MISC, lux);
+		input_sync(data->input_polled->input);
+	}
+}
 
-	input_report_abs(data->input, ABS_MISC, lux);
-	input_sync(data->input);
+static void isl29023_poll(struct input_polled_dev *dev)
+{
+	struct isl29023_data *data = dev->private;
+	isl29023_update_input(data);
+}
+
+static void isl29023_work(struct work_struct *work)
+{
+	struct isl29023_data *data = container_of(work, struct isl29023_data, work);
+	isl29023_update_input(data);
 }
 
 static irqreturn_t isl29023_irq_handler(int irq, void *handle)
@@ -892,12 +924,12 @@ static irqreturn_t isl29023_irq_handler(int irq, void *handle)
 /*
  * I2C layer
  */
-static int isl29023_probe(struct i2c_client *client,
-				    const struct i2c_device_id *id)
+static int isl29023_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
 	struct isl29023_data *data;
-	struct input_dev *input_dev;
+	struct input_dev *input_dev = NULL;
+	struct input_polled_dev *input_polled_dev = NULL;
 	int err = 0;
 	struct regulator *vdd = NULL;
 	u32 rext = 0;
@@ -907,9 +939,11 @@ static int isl29023_probe(struct i2c_client *client,
 	bool shared_irq;
 
 	vdd = devm_regulator_get(&client->dev, "vdd");
-	if (!IS_ERR(vdd)) {
+	if (!IS_ERR(vdd))
+	{
 		err  = regulator_enable(vdd);
-		if (err) {
+		if (err)
+		{
 			dev_err(&client->dev, "vdd set voltage error\n");
 			return err;
 		}
@@ -917,80 +951,143 @@ static int isl29023_probe(struct i2c_client *client,
 
 	err = of_property_read_u32(of_node, "rext", &rext);
 	if (err)
+	{
 		rext = DEFAULT_REGISTOR_VAL;
-	shared_irq = of_property_read_bool(of_node, "shared-interrupt");
+	}
 
 	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE))
+	{
 		return -EIO;
+	}
 
 	data = kzalloc(sizeof(struct isl29023_data), GFP_KERNEL);
 	if (!data)
+	{
 		return -ENOMEM;
+	}
 
 	data->client = client;
 	data->rext = (u16)rext;
-	snprintf(data->phys, sizeof(data->phys),
-		 "%s", dev_name(&client->dev));
+	snprintf(data->phys, sizeof(data->phys), "%s", dev_name(&client->dev));
 	i2c_set_clientdata(client, data);
 	mutex_init(&data->lock);
 
 	/* initialize the ISL29023 chip */
 	err = isl29023_init_client(client);
 	if (err)
+	{
 		goto exit_kfree;
+	}
 
 	/* register sysfs hooks */
 	err = sysfs_create_group(&client->dev.kobj, &isl29023_attr_group);
 	if (err)
-		goto exit_kfree;
-
-	input_dev = input_allocate_device();
-	if (!input_dev) {
-		err = -ENOMEM;
+	{
 		goto exit_kfree;
 	}
 
-	data->input = input_dev;
-	input_dev->name = "isl29023 light sensor";
-	input_dev->id.bustype = BUS_I2C;
-	input_dev->phys = data->phys;
+	if(data->client->irq)
+	{
+		dev_info(&client->dev, "using irq input device\n");
+		shared_irq = of_property_read_bool(of_node, "shared-interrupt");
+		input_dev = input_allocate_device();
+		if (!input_dev)
+		{
+			err = -ENOMEM;
+			goto exit_kfree;
+		}
 
-	__set_bit(EV_ABS, input_dev->evbit);
-	input_set_abs_params(input_dev, ABS_MISC, 0,
-			gain_range[DEF_RANGE]*499/data->rext, 0, 0);
+		data->input = input_dev;
+		input_dev->name = "isl29023 light sensor";
+		input_dev->id.bustype = BUS_I2C;
+		input_dev->phys = data->phys;
 
-	err = input_register_device(input_dev);
-	if (err)
-		goto exit_free_input;
+		__set_bit(EV_ABS, input_dev->evbit);
+		input_set_abs_params(input_dev, ABS_MISC, 0, gain_range[DEF_RANGE]*499/data->rext, 0, 0);
 
-	irq_flag = irqd_get_trigger_type(irq_data);
-	irq_flag |= IRQF_ONESHOT;
-	if (shared_irq)
-		irq_flag |= IRQF_SHARED;
-	err = request_threaded_irq(client->irq, NULL,
-					isl29023_irq_handler, irq_flag,
-					client->dev.driver->name, data);
-	if (err < 0) {
-		dev_err(&client->dev, "failed to register irq %d!\n",
-			client->irq);
-		goto exit_free_input;
+		err = input_register_device(input_dev);
+		if (err)
+		{
+			goto exit_free_input;
+		}
+
+		irq_flag = irqd_get_trigger_type(irq_data);
+		irq_flag |= IRQF_ONESHOT;
+		if (shared_irq)
+		{
+			irq_flag |= IRQF_SHARED;
+		}
+		err = request_threaded_irq(client->irq, NULL, isl29023_irq_handler, irq_flag, client->dev.driver->name, data);
+		if (err < 0)
+		{
+			dev_err(&client->dev, "failed to register irq %d!\n", client->irq);
+			goto exit_free_input;
+		}
+
+		data->workqueue = create_singlethread_workqueue("isl29023");
+		INIT_WORK(&data->work, isl29023_work);
+		if (data->workqueue == NULL)
+		{
+			dev_err(&client->dev, "couldn't create workqueue\n");
+			err = -ENOMEM;
+			goto exit_free_interrupt;
+		}
 	}
+	else
+	{
+		dev_info(&client->dev, "using polled input device\n");
+		input_polled_dev = input_allocate_polled_device();
 
-	data->workqueue = create_singlethread_workqueue("isl29023");
-	INIT_WORK(&data->work, isl29023_work);
-	if (data->workqueue == NULL) {
-		dev_err(&client->dev, "couldn't create workqueue\n");
-		err = -ENOMEM;
-		goto exit_free_interrupt;
+		if (IS_ERR(input_polled_dev))
+		{
+			dev_err(&(client->dev), "error: out of memory for input polled device\n");
+			err = -ENOMEM;
+			goto exit_kfree;
+		}
+
+		input_polled_dev->poll = isl29023_poll;
+		input_polled_dev->poll_interval = POLL_INTERVAL;
+		input_polled_dev->poll_interval_min = POLL_INTERVAL_MIN;
+		input_polled_dev->poll_interval_max = POLL_INTERVAL_MAX;
+		input_polled_dev->input->name = "isl29023 light sensor";
+		input_polled_dev->input->id.bustype = BUS_I2C;
+		input_polled_dev->input->phys = data->phys;
+		input_polled_dev->private = data;
+
+		__set_bit(EV_ABS, input_polled_dev->input->evbit);
+		input_set_abs_params(input_polled_dev->input, ABS_MISC, 0, gain_range[DEF_RANGE]*499/data->rext, 0, 0);
+
+		data->input_polled = input_polled_dev;
+
+		err = input_register_polled_device(data->input_polled);
+
+		if(err)
+		{
+			dev_err(&(client->dev), "error: cannot register the polled input device\n");
+			err = -ENOMEM;
+			goto exit_free_input;
+		}
+
+		isl29023_set_power_state(client, 1);
 	}
 
 	dev_info(&client->dev, "driver version %s enabled\n", DRIVER_VERSION);
 	return 0;
 
 exit_free_interrupt:
-	free_irq(client->irq, data);
+	if(client->irq)
+	{
+		free_irq(client->irq, data);
+	}
 exit_free_input:
-	input_free_device(input_dev);
+	if(client->irq)
+	{
+		input_free_device(input_dev);
+	}
+	else
+	{
+		input_free_polled_device(input_polled_dev);
+	}
 exit_kfree:
 	kfree(data);
 	return err;
@@ -1003,8 +1100,16 @@ static int isl29023_remove(struct i2c_client *client)
 	cancel_work_sync(&data->work);
 	destroy_workqueue(data->workqueue);
 	free_irq(client->irq, data);
-	input_unregister_device(data->input);
-	input_free_device(data->input);
+	if(client->irq)
+	{
+		input_unregister_device(data->input);
+		input_free_device(data->input);
+	}
+	else
+	{
+		input_unregister_polled_device(data->input_polled);
+		input_free_polled_device(data->input_polled);
+	}
 	sysfs_remove_group(&client->dev.kobj, &isl29023_attr_group);
 	isl29023_set_power_state(client, 0);
 	kfree(i2c_get_clientdata(client));

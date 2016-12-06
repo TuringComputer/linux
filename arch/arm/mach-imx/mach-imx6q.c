@@ -365,16 +365,27 @@ static void __init imx6q_csi_mux_init(void)
 	struct regmap *gpr;
 
 	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6q-iomuxc-gpr");
-	if (!IS_ERR(gpr)) {
-		if (of_machine_is_compatible("fsl,imx6q-sabresd") ||
-			of_machine_is_compatible("fsl,imx6q-sabreauto"))
+	if (!IS_ERR(gpr))
+	{
+		if (of_machine_is_compatible("fsl,imx6q-sabresd")   ||
+			of_machine_is_compatible("fsl,imx6q-sabreauto") ||
+			of_machine_is_compatible("turing,imx6q-turing"))
+		{
+			//Parallel Interface (csi=0; ipu=1)
 			regmap_update_bits(gpr, IOMUXC_GPR1, 1 << 19, 1 << 19);
-		else if (of_machine_is_compatible("fsl,imx6dl-sabresd") ||
-			 of_machine_is_compatible("fsl,imx6dl-sabreauto"))
+			//mipi csi=0; ipu=1
+			//regmap_update_bits(gpr, IOMUXC_GPR1, 1 << 19, 0 );
+		}
+		else if (of_machine_is_compatible("fsl,imx6dl-sabresd")   ||
+				 of_machine_is_compatible("fsl,imx6dl-sabreauto") ||
+				 of_machine_is_compatible("turing,imx6dl-turing"))
+		{
 			regmap_update_bits(gpr, IOMUXC_GPR13, 0x3F, 0x0C);
-	} else {
-		pr_err("%s(): failed to find fsl,imx6q-iomux-gpr regmap\n",
-		       __func__);
+		}
+		else
+		{
+			pr_err("%s(): failed to find fsl,imx6q-iomux-gpr regmap\n", __func__);
+		}
 	}
 }
 
