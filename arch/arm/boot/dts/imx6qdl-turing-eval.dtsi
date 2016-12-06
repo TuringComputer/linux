@@ -10,10 +10,6 @@
 		mxcfb0 = &mxcfb1;
 		mxcfb1 = &mxcfb2;
 	};
-
-	chosen {
-		stdout-path = &uart4;
-	};
 	
 	clocks {
 		#address-cells = <1>;
