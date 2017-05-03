@@ -297,16 +297,21 @@ static int imx6_pcie_assert_core_reset(struct pcie_port *pp)
 		regmap_read(imx6_pcie->iomuxc_gpr, IOMUXC_GPR1, &gpr1);
 		regmap_read(imx6_pcie->iomuxc_gpr, IOMUXC_GPR12, &gpr12);
 
-		if ((gpr1 & IMX6Q_GPR1_PCIE_REF_CLK_EN) &&
-		    (gpr12 & IMX6Q_GPR12_PCIE_CTL_2)) {
-			val = readl(pp->dbi_base + PCIE_PL_PFLR);
-			val &= ~PCIE_PL_PFLR_LINK_STATE_MASK;
-			val |= PCIE_PL_PFLR_FORCE_LINK;
-			writel(val, pp->dbi_base + PCIE_PL_PFLR);
+		// Turing Computer
+		// Workaround to fix kernel hanging when rebooting from WDG
+        if (!of_machine_is_compatible("turing,imx6q-turing") && !of_machine_is_compatible("turing,imx6dl-turing"))
+        {
+            if ((gpr1 & IMX6Q_GPR1_PCIE_REF_CLK_EN) && (gpr12 & IMX6Q_GPR12_PCIE_CTL_2))
+            {
+                val = readl(pp->dbi_base + PCIE_PL_PFLR);
+                val &= ~PCIE_PL_PFLR_LINK_STATE_MASK;
+                val |= PCIE_PL_PFLR_FORCE_LINK;
+                writel(val, pp->dbi_base + PCIE_PL_PFLR);
 
-			regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR12,
-					IMX6Q_GPR12_PCIE_CTL_2, 0 << 10);
-		}
+                regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR12,
+                        IMX6Q_GPR12_PCIE_CTL_2, 0 << 10);
+            }
+        }
 
 		regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR1,
 				IMX6Q_GPR1_PCIE_TEST_PD, 1 << 18);
