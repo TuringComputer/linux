@@ -281,37 +281,40 @@ static int imx6_pcie_assert_core_reset(struct pcie_port *pp)
 		regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR1,
 				IMX6Q_GPR1_PCIE_SW_RST, IMX6Q_GPR1_PCIE_SW_RST);
 	} else {
-		/*
-		 * If the bootloader already enabled the link we need some
-		 * special handling to get the core back into a state where
-		 * it is safe to touch it for configuration.  As there is
-		 * no dedicated reset signal wired up for MX6QDL, we need
-		 * to manually force LTSSM into "detect" state before
-		 * completely disabling LTSSM, which is a prerequisite
-		 * for core configuration.
-		 *
-		 * If both LTSSM_ENABLE and REF_SSP_ENABLE are active we
-		 * have a strong indication that the bootloader activated
-		 * the link.
-		 */
-		regmap_read(imx6_pcie->iomuxc_gpr, IOMUXC_GPR1, &gpr1);
-		regmap_read(imx6_pcie->iomuxc_gpr, IOMUXC_GPR12, &gpr12);
-
-		// Turing Computer
-		// Workaround to fix kernel hanging when rebooting from WDG
-        if (!of_machine_is_compatible("turing,imx6q-turing") && !of_machine_is_compatible("turing,imx6dl-turing"))
-        {
-            if ((gpr1 & IMX6Q_GPR1_PCIE_REF_CLK_EN) && (gpr12 & IMX6Q_GPR12_PCIE_CTL_2))
-            {
-                val = readl(pp->dbi_base + PCIE_PL_PFLR);
-                val &= ~PCIE_PL_PFLR_LINK_STATE_MASK;
-                val |= PCIE_PL_PFLR_FORCE_LINK;
-                writel(val, pp->dbi_base + PCIE_PL_PFLR);
-
-                regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR12,
-                        IMX6Q_GPR12_PCIE_CTL_2, 0 << 10);
-            }
-        }
+	    //
+	    // Turing Computer:
+	    // Following code has been removed because it causes the kernel to hang
+	    // when the system is rebooted by WDG.
+	    // This has been worked around in kernel 4.11 as described in the following patch:
+	    // PCI: imx6: remove LTSSM disable workaround
+	    // https://patchwork.kernel.org/patch/9528911/
+	    //
+//		/*
+//		 * If the bootloader already enabled the link we need some
+//		 * special handling to get the core back into a state where
+//		 * it is safe to touch it for configuration.  As there is
+//		 * no dedicated reset signal wired up for MX6QDL, we need
+//		 * to manually force LTSSM into "detect" state before
+//		 * completely disabling LTSSM, which is a prerequisite
+//		 * for core configuration.
+//		 *
+//		 * If both LTSSM_ENABLE and REF_SSP_ENABLE are active we
+//		 * have a strong indication that the bootloader activated
+//		 * the link.
+//		 */
+//		regmap_read(imx6_pcie->iomuxc_gpr, IOMUXC_GPR1, &gpr1);
+//		regmap_read(imx6_pcie->iomuxc_gpr, IOMUXC_GPR12, &gpr12);
+//
+//        if ((gpr1 & IMX6Q_GPR1_PCIE_REF_CLK_EN)
+//                && (gpr12 & IMX6Q_GPR12_PCIE_CTL_2)) {
+//            val = readl(pp->dbi_base + PCIE_PL_PFLR);
+//            val &= ~PCIE_PL_PFLR_LINK_STATE_MASK;
+//            val |= PCIE_PL_PFLR_FORCE_LINK;
+//            writel(val, pp->dbi_base + PCIE_PL_PFLR);
+//
+//            regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR12,
+//                    IMX6Q_GPR12_PCIE_CTL_2, 0 << 10);
+//        }
 
 		regmap_update_bits(imx6_pcie->iomuxc_gpr, IOMUXC_GPR1,
 				IMX6Q_GPR1_PCIE_TEST_PD, 1 << 18);
