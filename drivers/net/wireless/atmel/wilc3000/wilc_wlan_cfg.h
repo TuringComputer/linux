@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -41,5 +41,11 @@ struct wilc_cfg_str_t {
 };
 
 extern struct wilc_cfg_func mac_cfg;
+
+/*ATWILCSW-403*/
+typedef struct {
+	uint32_t id;
+	uint8_t *bin;
+} wilc_cfg_bin_t;
 
 #endif

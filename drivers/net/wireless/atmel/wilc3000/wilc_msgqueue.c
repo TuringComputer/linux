@@ -42,6 +42,7 @@ signed int WILC_MsgQueueCreate(struct MsgQueueHandle *pHandle)
 
 	return WILC_SUCCESS;
 }
+EXPORT_SYMBOL(WILC_MsgQueueCreate);
 
 signed int WILC_MsgQueueDestroy(struct MsgQueueHandle *pHandle)
 {
@@ -62,6 +63,7 @@ signed int WILC_MsgQueueDestroy(struct MsgQueueHandle *pHandle)
 
 	return WILC_SUCCESS;
 }
+EXPORT_SYMBOL(WILC_MsgQueueDestroy);
 
 signed int WILC_MsgQueueSend(struct MsgQueueHandle *pHandle,
 			    const void *pvSendBuffer,
@@ -116,7 +118,7 @@ signed int WILC_MsgQueueSend(struct MsgQueueHandle *pHandle,
 
 	return s32RetStatus;
 }
-
+EXPORT_SYMBOL(WILC_MsgQueueSend);
 	
 signed int WILC_MsgQueueRecv(struct MsgQueueHandle *pHandle,
 			   void *pvRecvBuffer, unsigned int u32RecvBufferSize,
@@ -179,4 +181,4 @@ signed int WILC_MsgQueueRecv(struct MsgQueueHandle *pHandle,
 	}
 	return s32RetStatus;
 }
-
+EXPORT_SYMBOL(WILC_MsgQueueRecv);

@@ -5,227 +5,187 @@
 #include <linux/slab.h>
 #include <linux/types.h>
 #include <linux/cdev.h>
-#include <asm/uaccess.h>
 #include <linux/device.h>
 #include <linux/spi/spi.h>
 
 #include "linux_wlan_common.h"
+#include "wilc_wfi_netdevice.h"
+extern struct semaphore spi_probe_sync;
 
-#define USE_SPI_DMA     0	//johnny add
+#define USE_SPI_DMA     0
 
-#ifdef WILC_ASIC_A0
- #if defined(PLAT_PANDA_ES_OMAP4460)
-  #define MIN_SPEED 12000000
-  #define MAX_SPEED 24000000
- #elif defined(PLAT_WMS8304)
-  #define MIN_SPEED 12000000
-  #define MAX_SPEED 24000000 //4000000
- #elif defined(CUSTOMER_PLATFORM)
- /*
-  TODO : define Clock speed under 48M.
- 
- ex)
-  #define MIN_SPEED 24000000
-  #define MAX_SPEED 48000000
- */
- #else
-  #define MIN_SPEED 24000000
-  #define MAX_SPEED 48000000
- #endif
-#else /* WILC_ASIC_A0 */
-/* Limit clk to 6MHz on FPGA. */
- #define MIN_SPEED 6000000
- #define MAX_SPEED 6000000 
-#endif /* WILC_ASIC_A0 */
+struct wilc_wlan_os_context  g_linux_spi_os_context;
+struct spi_device *wilc_spi_dev;
 
-static uint32_t SPEED = MIN_SPEED;
+void chip_wakeup(void);
+void chip_allow_sleep(void);
+void chip_sleep_manually(u32 u32SleepTime);
+void host_wakeup_notify(void);
+void host_sleep_notify(void);
 
-struct spi_device* wilc_spi_dev;
-void linux_spi_deinit(void* vp);
+extern uint8_t u8ResumeOnEvent;
 
-static int __init wilc_bus_probe(struct spi_device* spi){
-	
-	PRINT_D(BUS_DBG,"spiModalias: %s\n",spi->modalias);
-	PRINT_D(BUS_DBG,"spiMax-Speed: %d\n",spi->max_speed_hz);
+
+static int wilc_bus_probe(struct spi_device* spi)
+{
+	PRINT_D(INIT_DBG, "spiModalias: %s, spiMax-Speed: %d\n", 
+		spi->modalias, spi->max_speed_hz);
 	wilc_spi_dev = spi;
-	
-	printk("Driver Initializing success\n");
+
+	up(&spi_probe_sync);
 	return 0;
 }
 
-static int __exit wilc_bus_remove(struct spi_device* spi){
-	
-		//linux_spi_deinit(NULL);
-	
+static int wilc_bus_remove(struct spi_device *spi)
+{
+	return 0;
+}
+static int wilc_spi_suspend(struct device *dev)
+{
+	printk("\n\n << SUSPEND >>\n\n");
+
+	if((g_linux_spi_os_context.hif_critical_section) != NULL)
+		mutex_lock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+
+	chip_wakeup();
+
+	if((g_linux_spi_os_context.hif_critical_section)!= NULL){
+		if (mutex_is_locked((struct mutex*)(g_linux_spi_os_context.hif_critical_section))){
+			mutex_unlock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+		}
+	}
+
+	/*if there is no events , put the chip in low power mode */
+	if(u8ResumeOnEvent == 0)
+		chip_sleep_manually(0xffffffff);
+	else
+	{
+		/*notify the chip that host will sleep*/
+		host_sleep_notify();
+		chip_allow_sleep();
+	}
+
+	if((g_linux_spi_os_context.hif_critical_section) != NULL)
+		mutex_lock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+
+	return 0 ;
+}
+
+static int wilc_spi_resume(struct device *dev)
+{
+	printk("\n\n  <<RESUME>> \n\n");
+
+	/*wake the chip to compelete the re-intialization*/
+	chip_wakeup();
+
+	if((g_linux_spi_os_context.hif_critical_section)!= NULL){
+		if (mutex_is_locked((struct mutex*)(g_linux_spi_os_context.hif_critical_section))){
+			mutex_unlock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+		}
+	}
+
+	/*if there is an event , notify the chip that the host is awake now*/
+	if(u8ResumeOnEvent == 1)
+		host_wakeup_notify();
+
+	if((g_linux_spi_os_context.hif_critical_section) != NULL)
+		mutex_lock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+
+	chip_allow_sleep();
+
+	if((g_linux_spi_os_context.hif_critical_section)!= NULL){
+		if (mutex_is_locked((struct mutex*)(g_linux_spi_os_context.hif_critical_section))){
+			mutex_unlock((struct mutex*)(g_linux_spi_os_context.hif_critical_section));
+		}
+	}
 	return 0;
 }
 
 #ifdef CONFIG_OF
-static const struct of_device_id wilc1000_of_match[] = {
+static const struct of_device_id wilc_of_match[] = {
 	{ .compatible = "atmel,wilc_spi", },
 	{}
 };
-MODULE_DEVICE_TABLE(of, wilc1000_of_match);
+MODULE_DEVICE_TABLE(of, wilc_of_match);
 #endif
+
+static const struct dev_pm_ops wilc_spi_pm_ops = {	
+     .suspend = wilc_spi_suspend,    
+     .resume    = wilc_spi_resume,
+    	};
 
 struct spi_driver wilc_bus __refdata = {
-		.driver = {
-				.name = MODALIAS,
+	.driver = {
+		.name = MODALIAS,
 #ifdef CONFIG_OF
-				.of_match_table = wilc1000_of_match,
+		.of_match_table = wilc_of_match,
 #endif
-		},
-		.probe =  wilc_bus_probe,
-		.remove = __exit_p(wilc_bus_remove),
+		.pm = &wilc_spi_pm_ops,
+	},
+	.probe =  wilc_bus_probe,
+	.remove = __exit_p(wilc_bus_remove),
 };
 
-
 void linux_spi_deinit(void* vp){
-	
-		spi_unregister_driver(&wilc_bus);	
-		
-		SPEED = MIN_SPEED;
-		PRINT_ER("@@@@@@@@@@@@ restore SPI speed to %d @@@@@@@@@\n", SPEED);
-	
+	spi_unregister_driver(&wilc_bus);	
 }
-
-
 
 int linux_spi_init(void* vp){
 	int ret = 1;
 	static int called = 0;
 	
-	
 	if(called == 0){
 		called++;
-		if(&wilc_bus == NULL){
-			PRINT_ER("wilc_bus address is NULL\n");
-		}
 		ret = spi_register_driver(&wilc_bus);		
 	}
+	memcpy(&g_linux_spi_os_context,(struct wilc_wlan_os_context*) vp,sizeof(struct wilc_wlan_os_context));
 
-	/* change return value to match WILC interface */
 	(ret<0)? (ret = 0):(ret = 1);
 	
 	return ret;
 }
 
-#if defined (NM73131_0_BOARD)
-
-int linux_spi_write(uint8_t* b, uint32_t len){	
-
-	int ret;
-
-	if(len > 0 && b != NULL) {
-		struct spi_message msg;			
-		PRINT_D(BUS_DBG,"Request writing %d bytes\n",len);
-		struct spi_transfer tr = {
-			.tx_buf = b,
-			.len = len,							
-			.speed_hz = SPEED,
-			.delay_usecs = 0,
-		};
-	
-		spi_message_init(&msg);
-		spi_message_add_tail(&tr,&msg);
-		ret = spi_sync(wilc_spi_dev,&msg);
-		if(ret < 0){
-			PRINT_ER( "SPI transaction failed\n");
-		}
-
-	} else{
-		PRINT_ER("can't write data with the following length: %d\n",len);
-		PRINT_ER("FAILED due to NULL buffer or ZERO length check the following length: %d\n",len);
-		ret = -1;
-	}
-
-	/* change return value to match wilc interface */
-	(ret<0)? (ret = 0):(ret = 1);
-
-
-	return ret;
-}
-
-#else
-int linux_spi_write(uint8_t* b, uint32_t len){	
+int linux_spi_write(u8 *b, uint32_t len)
+{	
 
 	int ret;
 	struct spi_message msg;
 
-	if(len > 0 && b != NULL){
+	if (len > 0 && NULL != b) {
 		struct spi_transfer tr = {
-					.tx_buf = b,
-					//.rx_buf = r_buffer,
-					.len = len,							
-					.speed_hz = SPEED,
-					.delay_usecs = 0,
+			.tx_buf = b,
+			.len = len,
+			.delay_usecs = 0,
 		};
 		char *r_buffer = (char*) kzalloc(len, GFP_KERNEL);
 		if(! r_buffer){
 			PRINT_ER("Failed to allocate memory for r_buffer\n");
+			return -1;
 		}
 		tr.rx_buf = r_buffer;
-		PRINT_D(BUS_DBG,"Request writing %d bytes\n",len);		
-		
+		PRINT_D(BUS_DBG, "Request writing %d bytes\n", len);
+
 		memset(&msg, 0, sizeof(msg));
 		spi_message_init(&msg);
-		spi_message_add_tail(&tr,&msg);
+		spi_message_add_tail(&tr, &msg);
 		
-		ret = spi_sync(wilc_spi_dev,&msg);
-		if(ret < 0){
+		ret = spi_sync(wilc_spi_dev, &msg);
+		if(ret < 0)
 			PRINT_ER( "SPI transaction failed\n");
-		}
-					
+
 		kfree(r_buffer);
-	}else{
-		PRINT_ER("can't write data with the following length: %d\n",len);
-		PRINT_ER("FAILED due to NULL buffer or ZERO length check the following length: %d\n",len);
+	} else {
+		PRINT_ER("can't write data with the following length: %d, or NULL buffer\n",len);
 		ret = -1;
 	}
-		
-	/* change return value to match WILC interface */
-	(ret<0)? (ret = 0):(ret = 1);
-	
-	
+
+	(ret < 0) ? (ret = 0) : (ret = 1);
+
 	return ret;
 }
 
-#endif
-
-#if defined (NM73131_0_BOARD)
-
-int linux_spi_read(unsigned char*rb, unsigned long rlen){
-
-	int ret;
-
-	if(rlen > 0) {
-		struct spi_message msg;
-		struct spi_transfer tr = {
-			.rx_buf = rb,
-			.len = rlen,
-			.speed_hz = SPEED,
-			.delay_usecs = 0,
-
-		};
-
-		spi_message_init(&msg);
-		spi_message_add_tail(&tr,&msg);
-		ret = spi_sync(wilc_spi_dev,&msg);
-		if(ret < 0){
-			PRINT_ER("SPI transaction failed\n");
-		}
-	}else{
-		PRINT_ER("can't read data with the following length: %ld\n",rlen);
-		ret = -1;
-	}
-	/* change return value to match WILC interface */
-	(ret<0)? (ret = 0):(ret = 1);
-
-	return ret;
-}
-#else
-int linux_spi_read(unsigned char*rb, unsigned long rlen){
-
+int linux_spi_read(u8 *rb, uint32_t rlen)
+{
 	int ret;
 	
 	if(rlen > 0){
@@ -234,44 +194,39 @@ int linux_spi_read(unsigned char*rb, unsigned long rlen){
 		//		.tx_buf = t_buffer,
 				.rx_buf = rb,
 				.len = rlen,
-				.speed_hz = SPEED,
 				.delay_usecs = 0,
 
 		};
 		char *t_buffer = (char*) kzalloc(rlen, GFP_KERNEL);
 		if(! t_buffer){
 			PRINT_ER("Failed to allocate memory for t_buffer\n");
+			return -1;
 		}
 		tr.tx_buf = t_buffer;			
 
 		memset(&msg, 0, sizeof(msg));
 		spi_message_init(&msg);
-//[[ johnny add
+
 		msg.spi = wilc_spi_dev;
 		msg.is_dma_mapped = USE_SPI_DMA;
-//]]
+
 		spi_message_add_tail(&tr,&msg);
 
 		ret = spi_sync(wilc_spi_dev,&msg);
-		if(ret < 0){
+		if(ret < 0)
 			PRINT_ER("SPI transaction failed\n");
-		}
 		kfree(t_buffer);
 	}else{
-		PRINT_ER("can't read data with the following length: %ld\n",rlen);
+		PRINT_ER("can't read data with the following length: %d\n",rlen);
 		ret = -1;
 	}
-	/* change return value to match WILC interface */
 	(ret<0)? (ret = 0):(ret = 1);
 
 	return ret;
 }
 
-#endif
-
-int linux_spi_write_read(unsigned char*wb, unsigned char*rb, unsigned int rlen)
+int linux_spi_write_read(u8 *wb, u8 *rb, unsigned int rlen)
 {
-
 	int ret;
 
 	if(rlen > 0) {
@@ -280,7 +235,6 @@ int linux_spi_write_read(unsigned char*wb, unsigned char*rb, unsigned int rlen)
 			.rx_buf = rb,
 			.tx_buf = wb,
 			.len = rlen,
-			.speed_hz = SPEED,
 			.bits_per_word = 8,
 			.delay_usecs = 0,
 
@@ -293,23 +247,14 @@ int linux_spi_write_read(unsigned char*wb, unsigned char*rb, unsigned int rlen)
 		
 		spi_message_add_tail(&tr,&msg);
 		ret = spi_sync(wilc_spi_dev,&msg);
-		if(ret < 0){
+		if(ret < 0)
 			PRINT_ER("SPI transaction failed\n");
-		}
 	}else{
 		PRINT_ER("can't read data with the following length: %d\n",rlen);
 		ret = -1;
 	}
-	/* change return value to match WILC interface */
 	(ret<0)? (ret = 0):(ret = 1);
 
 	return ret;
 }
 
-int linux_spi_set_max_speed(void)
-{
-	SPEED = MAX_SPEED;
-	
-	PRINT_INFO(BUS_DBG,"@@@@@@@@@@@@ change SPI speed to %d @@@@@@@@@\n", SPEED);
-	return 1;
-}

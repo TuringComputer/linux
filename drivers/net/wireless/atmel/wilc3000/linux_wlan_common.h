@@ -1,5 +1,5 @@
 /*
- * Atmel WILC3000 802.11 b/g/n and Bluetooth Combo driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -19,9 +19,8 @@
 #ifndef LINUX_WLAN_COMMON_H
 #define LINUX_WLAN_COMMON_H
 
-
 #define WIFI_FIRMWARE	"atmel/wilc3000_wifi_firmware.bin"
-#define BT_FIRMWARE	"atmel/wilc3000_bt_firmware.bin"
+#define BT_FIRMWARE		"atmel/wilc3000_bt_firmware.bin"
 
 enum debug_region{
 	Generic_debug = 0,
@@ -91,28 +90,16 @@ typedef enum { ANTENNA1  = 0,
 #endif
 #define LINUX_TX_SIZE	(64 * 1024)
 
-#if defined(PLAT_SAMA5D4)
-#define MODALIAS	"wilc_spi"
-#define GPIO_NUM	46
-#define MIN_SPEED 24000000
-#define GPIO_NUM_RESET	60
-#define GPIO_NUM_CHIP_EN	94
-#endif
 
-#if defined(PLAT_SAMA5D3)
-#define MODALIAS	"wilc_spi"
-#define GPIO_NUM	68
-#define MIN_SPEED 24000000
-#endif
-
+#if defined(SAMA5D4_BOARD)
+	#define MODALIAS 	"wilc_spi"
+	#define GPIO_NUM	0x5B
+#else
 /**
  * This if for Turing's Eval Board
  */
-#define MODALIAS	"wilc_spi"
-#define GPIO_NUM	93
-#define MIN_SPEED 50000000
-#define GPIO_NUM_RESET	31
-#define GPIO_NUM_CHIP_EN	27
+    #define MODALIAS    "wilc_spi"
+    #define GPIO_NUM    93
+#endif
 
-int linux_wlan_get_num_conn_ifcs(void);
 #endif /* LINUX_WLAN_COMMON_H */

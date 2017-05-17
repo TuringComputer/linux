@@ -1,5 +1,5 @@
 /*
- * Atmel WILC1000 802.11 b/g/n driver
+ * Atmel WILC 802.11 b/g/n driver
  *
  * Copyright (c) 2015 Atmel Corportation
  *
@@ -19,7 +19,7 @@
 #ifndef WILC_TYPE_H
 #define WILC_TYPE_H
 
-#include "wilc_oswrapper.h"
+#include "wilc_errorsupport.h"
 #include <linux/kthread.h>
 #include <linux/semaphore.h>
 #include <linux/module.h>
