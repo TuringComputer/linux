@@ -142,7 +142,7 @@ static int pn544_enable(struct pn54x_dev *dev, int mode)
 	}
 
 	if (MODE_RUN == mode) {
-		pr_info("%s power on\n", __func__);
+	    pr_debug("%s power on\n", __func__);
 		if (gpio_is_valid(dev->firm_gpio))
 			gpio_set_value_cansleep(dev->firm_gpio, 0);
 		gpio_set_value_cansleep(dev->ven_gpio, 1);
@@ -151,7 +151,7 @@ static int pn544_enable(struct pn54x_dev *dev, int mode)
 	else if (MODE_FW == mode) {
 		/* power on with firmware download (requires hw reset)
 		 */
-		pr_info("%s power on with firmware\n", __func__);
+	    pr_debug("%s power on with firmware\n", __func__);
 		gpio_set_value(dev->ven_gpio, 1);
 		msleep(20);
 		if (gpio_is_valid(dev->firm_gpio)) {
@@ -187,7 +187,7 @@ enable_exit0:
 static void pn544_disable(struct pn54x_dev *dev)
 {
 	/* power off */
-	pr_info("%s power off\n", __func__);
+    pr_debug("%s power off\n", __func__);
 	if (gpio_is_valid(dev->firm_gpio))
 		gpio_set_value_cansleep(dev->firm_gpio, 0);
 	gpio_set_value_cansleep(dev->ven_gpio, 0);
@@ -311,7 +311,7 @@ static int pn54x_dev_open(struct inode *inode, struct file *filp)
 
 	filp->private_data = pn54x_dev;
 
-	pr_info("%s : %d,%d\n", __func__, imajor(inode), iminor(inode));
+	pr_debug("%s : %d,%d\n", __func__, imajor(inode), iminor(inode));
 
 	// pn544_enable(pn54x_dev, MODE_RUN);
 
@@ -324,7 +324,7 @@ static int pn54x_dev_release(struct inode *inode, struct file *filp)
 	//										   struct pn54x_dev,
 	//										   pn54x_device);
 
-	pr_info("%s : closing %d,%d\n", __func__, imajor(inode), iminor(inode));
+    pr_debug("%s : closing %d,%d\n", __func__, imajor(inode), iminor(inode));
 
 	// pn544_disable(pn54x_dev);
 
@@ -336,7 +336,7 @@ static long  pn54x_dev_ioctl(struct file *filp, unsigned int cmd,
 {
 	struct pn54x_dev *pn54x_dev = filp->private_data;
 
-	pr_info("%s, cmd=%d, arg=%lu\n", __func__, cmd, arg);
+	pr_debug("%s, cmd=%d, arg=%lu\n", __func__, cmd, arg);
 	switch (cmd) {
 	case PN544_SET_PWR:
 		if (arg == 2) {
