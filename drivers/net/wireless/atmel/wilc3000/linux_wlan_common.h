@@ -72,9 +72,9 @@ typedef enum { ANTENNA1  = 0,
 
 #define REGION	 INIT_DBG|GENERIC_DBG|CFG80211_DBG | FIRM_DBG | HOSTAPD_DBG | PWRDEV_DBG
 
-#define DEBUG	    0
-#define INFO        0
-#define WRN         0
+#define DEBUG	    1
+#define INFO        1
+#define WRN         1
 #define PRINT_D(region,...)	do{ if(DEBUG == 1 && ((REGION)&(region))){printk("DBG [%s: %d]",__FUNCTION__,__LINE__);\
 							printk(__VA_ARGS__);}}while(0)
 							
