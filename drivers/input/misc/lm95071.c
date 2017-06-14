@@ -1,5 +1,5 @@
 /*
- * .c
+ * lm95071.c
  *
  *	Digital 14-bits temperature input/hwmon driver for LM95071 from Texas Instruments.
  *
@@ -58,9 +58,9 @@ static int lm95071_spi_read(struct lm95071_chip *this, u16 *dst)
 	return 0;
 }
 
-static int lm95071_read_temperature(struct lm95071_chip *this, int *dst)
+static int lm95071_read_temperature(struct lm95071_chip *this, s32 *dst)
 {
-	s16 temp;
+	s32 temp;
 	u16 raw;
 	int error = 0;
 
@@ -79,7 +79,7 @@ static int lm95071_read_temperature(struct lm95071_chip *this, int *dst)
 	 *
 	 * Official docs here: http://www.ti.com/lit/ds/symlink/lm95071.pdf
 	 */
-	temp = (s16)(raw / 4);
+	temp = (s32)(raw / 4);
 	temp *= 31;
 
 	dev_dbg(&(this->spi->dev), "temp read: %d mC\n", temp);
