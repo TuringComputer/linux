@@ -37,7 +37,7 @@ struct lm95071_chip
 	struct input_polled_dev			*input;
 };
 
-static int lm95071_spi_read(struct lm95071_chip *this, u16 *dst)
+static int lm95071_spi_read(struct lm95071_chip *this, s16 *dst)
 {
 	int error = 0;
 
@@ -60,8 +60,8 @@ static int lm95071_spi_read(struct lm95071_chip *this, u16 *dst)
 
 static int lm95071_read_temperature(struct lm95071_chip *this, s32 *dst)
 {
-	s32 temp;
-	u16 raw;
+    s32 temp;
+	s16 raw;
 	int error = 0;
 
 	error = lm95071_spi_read(this, &raw);
