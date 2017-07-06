@@ -25,7 +25,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reg_gpio_dvfs: regulator-gpio {
+		reg_gpio_dvfs: reg_gpio_dvfs {
 			compatible = "regulator-gpio";
 			pinctrl-names = "default";
 			pinctrl-0 = <&pinctrl_dvfs>;
@@ -35,6 +35,17 @@
 			regulator-type = "voltage";
 			gpios = <&gpio5 3 GPIO_ACTIVE_HIGH>;
 			states = <1300000 0x1 1400000 0x0>;
+		};
+		
+		reg_usb_otg: reg_usb_otg {		
+			compatible = "regulator-fixed";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			reg = <1>;
+			regulator-name = "otg_pwr_en";
+			gpio = <&gpio4 26 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			regulator-off-in-suspend;
 		};
 	};
 	
@@ -308,13 +319,7 @@
 &lcdif {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_lcdif>;
-	display = <&display0>;
 	status = "okay";
-
-	display0: display {
-		bits-per-pixel = <16>;
-		bus-width = <24>;
-	};
 };
 
 &pwm3 {
@@ -374,6 +379,7 @@
 	hnp-disable;
 	adp-disable;
 	status = "okay";
+	vbus-supply = <&reg_usb_otg>;
 };
 
 &usbotg2 {
@@ -435,4 +441,11 @@
 	pinctrl-0 = <&pinctrl_gpmi_nand>;
 	status = "okay";
 	nand-on-flash-bbt;
+};
+
+&wdog1 {
+	/*pinctrl-names = "default";*/
+	/*pinctrl-0 = <&pinctrl_wdog>;*/
+	fsl,wdog_b;
+	status = "okay";
 };

@@ -19,6 +19,9 @@
 #ifndef AT_PWR_DEV_H
 #define AT_PWR_DEV_H
 
+#ifdef CONFIG_OF
+#include <linux/of.h>
+#endif
 
 #define PWR_DEV_SRC_WIFI	0
 #define PWR_DEV_SRC_BT		1
@@ -51,11 +54,54 @@
 #define N_INTR			0x00000008
 #define N_RXQ			0x00000010
 
+#if defined(PLAT_SAMA5D4)
+#define GPIO_NUM_RESET  60
+#define GPIO_NUM_CHIP_EN    94
+#endif
+
 /**
  * This if for Turing's Eval Board
  */
-#define GPIO_NUM_RESET      31
-#define GPIO_NUM_CHIP_EN    27
+#ifndef CONFIG_OF
+    #define GPIO_NUM_RESET      31
+    #define GPIO_NUM_CHIP_EN    27
+#else
+#define IMX_GPIO_NUM(port, num)      (((port - 1) * 32) + num)
+static inline int wilc3000_get_gpioreset(void)
+{
+    if(of_machine_is_compatible("turing,imx6q-turing-eval") || of_machine_is_compatible("turing,imx6dl-turing-eval"))
+    {
+        return IMX_GPIO_NUM(1, 31);
+    }
+    else if(of_machine_is_compatible("turing,imx6ul-turing-eval") || of_machine_is_compatible("turing,imx6ull-turing-eval"))
+    {
+        return IMX_GPIO_NUM(5, 2);
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+static inline int wilc3000_get_gpioen(void)
+{
+    if(of_machine_is_compatible("turing,imx6q-turing-eval") || of_machine_is_compatible("turing,imx6dl-turing-eval"))
+    {
+        return IMX_GPIO_NUM(1, 27);
+    }
+    else if(of_machine_is_compatible("turing,imx6ul-turing-eval") || of_machine_is_compatible("turing,imx6ull-turing-eval"))
+    {
+        return IMX_GPIO_NUM(5, 1);
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+    #define GPIO_NUM_RESET          wilc3000_get_gpioreset()
+    #define GPIO_NUM_CHIP_EN        wilc3000_get_gpioen()
+#endif
 
 enum BUS_ACQUIRE {
 	ACQUIRE_ONLY		= 0,

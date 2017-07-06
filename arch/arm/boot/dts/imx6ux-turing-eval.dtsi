@@ -81,24 +81,16 @@
 		};
 	};
 	
-	sound {
+	sound-sgtl5000 {
 		compatible = "fsl,imx-audio-sgtl5000";
 		model = "imx-sgtl5000";
-		cpu-dai = <&sai2>;
+		ssi-controller = <&sai2>;
 		audio-codec = <&codec>;
-		codec-master;
-		asrc-controller = <&asrc>;
 		audio-routing =
-			"MIC_IN", "Mic Jack",
-			"Mic Jack", "Mic Bias",
-			"Headphone Jack", "HP_OUT",
-			"CPU-Playback", "ASRC-Playback",
-			"Playback", "CPU-Playback",
-			"ASRC-Capture", "CPU-Capture",
-			"CPU-Capture", "Capture";
-		mux-int-port = <2>;
-		mux-ext-port = <3>;
+			"LINE_IN", "Line In Jack",
+			"Headphone Jack", "HP_OUT";
 		hp-det-gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
+		fsl,no-audmux;
 	};
 
 	sii902x_reset: sii902x-reset {
@@ -115,7 +107,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		reg_usb_hub: regulator@1 {
+		reg_usb_hub: reg_usb_hub {
 			compatible = "regulator-fixed";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
@@ -123,15 +115,14 @@
 			regulator-name = "usb_hub_rst";
 			gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
-			regulator-boot-on;
 			regulator-off-in-suspend;
 		};
 
-		reg_audio: regulator@2 {
+		reg_3p3v: 3p3v {
 			compatible = "regulator-fixed";
+			regulator-name = "3P3V";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
-			reg = <2>;
 			regulator-always-on;
 		};
 	};
@@ -142,9 +133,9 @@
 		compatible = "fsl,sgtl5000";
 		reg = <0x0a>;
 		clocks = <&audio_clk>;
-		VDDA-supply = <&reg_audio>;
-		VDDIO-supply = <&reg_audio>;
 		status = "okay";
+		VDDA-supply = <&reg_3p3v>;
+		VDDIO-supply = <&reg_3p3v>;
 	};
 	
 	lsm9ds1-ag@0x6B {
@@ -214,3 +205,38 @@
 		reg = <0>;
 	};
 };
+
+&lcdif {
+	display = <&display>;
+	status = "okay";
+
+	/* This is for HDMI display */
+	display: display {
+		bits-per-pixel = <16>;
+		bus-width = <24>;
+
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: timing0 {
+				clock-frequency = <33500000>;
+				hactive = <800>;
+				vactive = <480>;
+				hback-porch = <89>;
+				hfront-porch = <164>;
+				vback-porch = <23>;
+				vfront-porch = <10>;
+				hsync-len = <10>;
+				vsync-len = <10>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <1>;
+				pixelclk-active = <0>;
+			};
+		};
+	};
+};
+
+&usbotg2 {
+	vbus-supply = <&reg_usb_hub>;
+};
+

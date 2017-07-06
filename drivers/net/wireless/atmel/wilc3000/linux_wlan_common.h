@@ -19,6 +19,10 @@
 #ifndef LINUX_WLAN_COMMON_H
 #define LINUX_WLAN_COMMON_H
 
+#ifdef CONFIG_OF
+#include <linux/of.h>
+#endif
+
 #define WIFI_FIRMWARE	"atmel/wilc3000_wifi_firmware.bin"
 #define BT_FIRMWARE		"atmel/wilc3000_bt_firmware.bin"
 
@@ -91,15 +95,42 @@ typedef enum { ANTENNA1  = 0,
 #define LINUX_TX_SIZE	(64 * 1024)
 
 
-#if defined(SAMA5D4_BOARD)
-	#define MODALIAS 	"wilc_spi"
-	#define GPIO_NUM	0x5B
-#else
+#if defined(PLAT_SAMA5D4)
+#define MODALIAS    "wilc_spi"
+#define GPIO_NUM    46
+#endif
+
+#if defined(PLAT_SAMA5D3)
+#define MODALIAS    "wilc_spi"
+#define GPIO_NUM    68
+#define MIN_SPEED 24000000
+#endif
+
 /**
  * This if for Turing's Eval Board
  */
-    #define MODALIAS    "wilc_spi"
-    #define GPIO_NUM    93
+#define MODALIAS                "wilc_spi"
+#ifndef CONFIG_OF
+    #define GPIO_NUM            93
+#else
+#define IMX_GPIO_NUM(port, num)      (((port - 1) * 32) + num)
+static inline int wilc3000_get_gpioirq(void)
+{
+    if(of_machine_is_compatible("turing,imx6q-turing-eval") || of_machine_is_compatible("turing,imx6dl-turing-eval"))
+    {
+        return IMX_GPIO_NUM(3, 29);
+    }
+    else if(of_machine_is_compatible("turing,imx6ul-turing-eval") || of_machine_is_compatible("turing,imx6ull-turing-eval"))
+    {
+        return IMX_GPIO_NUM(5, 0);
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+    #define GPIO_NUM                wilc3000_get_gpioirq()
 #endif
 
 #endif /* LINUX_WLAN_COMMON_H */

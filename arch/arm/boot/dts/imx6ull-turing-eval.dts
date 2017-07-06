@@ -8,5 +8,5 @@
 
 / {
 	model = "Turing i.MX6 Evaluation Board Ultra Lite L";
-	compatible = "turing,imx6ull-turing", "fsl,imx6ull";
+	compatible = "turing,imx6ull-turing-eval", "turing,imx6ull-turing", "fsl,imx6ull";
 };
