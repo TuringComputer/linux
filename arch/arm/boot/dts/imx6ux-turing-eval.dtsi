@@ -1,0 +1,216 @@
+/*
+ * Copyright (C) 2017 Turing Computer.
+ */
+
+#include "imx6ux-turing.dtsi"
+
+/ {
+	chosen {
+		stdout-path = &uart4;
+	};
+	
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		audio_clk: clock@0 {
+			compatible = "fixed-clock";
+			reg = <0>;
+			#clock-cells = <0>;
+			clock-frequency = <12288000>;
+		};
+	};
+	
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+		
+		led1 {
+			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "none";
+		};
+		
+		led2 {
+			gpios = <&gpio2 8 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "none";
+		};
+		
+		led3 {
+			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "none";
+		};
+		
+		led4 {
+			gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "none";
+		};
+		
+		led5 {
+			gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
+			linux,default-trigger = "none";
+		};
+	};
+	
+	gpio-keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
+
+		home {
+			label = "Home";
+			gpios = <&gpio5 6 GPIO_ACTIVE_LOW>;
+			gpio-key,wakeup;
+			linux,code = <KEY_HOMEPAGE>;
+		};
+
+		back {
+			label = "Back";
+			gpios = <&gpio5 7 GPIO_ACTIVE_LOW>;
+			gpio-key;
+			linux,code = <KEY_BACK>;
+		};
+
+		menu {
+			label = "Menu";
+			gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+			gpio-key;
+			linux,code = <KEY_MENU>;
+		};
+	};
+	
+	sound {
+		compatible = "fsl,imx-audio-sgtl5000";
+		model = "imx-sgtl5000";
+		cpu-dai = <&sai2>;
+		audio-codec = <&codec>;
+		codec-master;
+		asrc-controller = <&asrc>;
+		audio-routing =
+			"MIC_IN", "Mic Jack",
+			"Mic Jack", "Mic Bias",
+			"Headphone Jack", "HP_OUT",
+			"CPU-Playback", "ASRC-Playback",
+			"Playback", "CPU-Playback",
+			"ASRC-Capture", "CPU-Capture",
+			"CPU-Capture", "Capture";
+		mux-int-port = <2>;
+		mux-ext-port = <3>;
+		hp-det-gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
+	};
+
+	sii902x_reset: sii902x-reset {
+		compatible = "gpio-reset";
+		reset-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <100000>;
+		#reset-cells = <0>;
+		status = "okay";
+		initially-in-reset;
+	};
+	
+	regulators {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		reg_usb_hub: regulator@1 {
+			compatible = "regulator-fixed";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			reg = <1>;
+			regulator-name = "usb_hub_rst";
+			gpio = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			regulator-boot-on;
+			regulator-off-in-suspend;
+		};
+
+		reg_audio: regulator@2 {
+			compatible = "regulator-fixed";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			reg = <2>;
+			regulator-always-on;
+		};
+	};
+};
+
+&i2c1 {
+	codec: sgtl5000@0a {
+		compatible = "fsl,sgtl5000";
+		reg = <0x0a>;
+		clocks = <&audio_clk>;
+		VDDA-supply = <&reg_audio>;
+		VDDIO-supply = <&reg_audio>;
+		status = "okay";
+	};
+	
+	lsm9ds1-ag@0x6B {
+        compatible = "st,lsm9ds1-acc-gyr";
+        reg = <0x6B>;
+        status = "okay";
+        rot-matrix = /bits/ 16 <(1) (0) (0)
+                                (0) (1) (0)
+                                (0) (0) (1)>;
+        g-poll-interval = <100>;
+        g-min-interval = <2>;
+        g-fs-range = <0>;
+        x-poll-interval = <100>;
+        x-min-interval = <1>;
+        x-fs-range = <0>;
+        aa-filter-bw = <0>;
+    };
+
+    lsm9ds1-m@0x1E {
+        compatible = "st,lsm9ds1-mag";
+        reg = <0x1E>;
+        status = "okay";
+        rot-matrix = /bits/ 16 <(1) (0) (0)
+                                (0) (1) (0)
+                                (0) (0) (1)>;
+        poll-interval = <100>;
+        min-interval = <13>;
+        fs-range = <0>;
+    };
+	
+};
+
+&i2c3 {
+	sii902x@39 {
+		compatible = "SiI,sii902x";
+		interrupt-parent = <&gpio1>;
+		interrupts = <0 2>;
+		mode_str ="1366x768@60";
+		bits-per-pixel = <16>;
+		resets = <&sii902x_reset>;
+		reg = <0x39>;
+	};
+};
+
+&ecspi1 {
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+	
+	temp_sensor: lm95071@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "ti,lm95071";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+	};	
+};
+
+&ecspi4 {
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio5 5 GPIO_ACTIVE_HIGH>;
+
+	flash: m25p80@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "st,m25p32";
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+	};
+};

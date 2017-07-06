@@ -1,0 +1,12 @@
+/*
+ * Copyright (C) 2017 Turing Computer.
+ */
+/dts-v1/;
+
+#include "imx6ul-turing.dtsi"
+#include "imx6ux-turing-eval.dtsi"
+
+/ {
+	model = "Turing i.MX6 Evaluation Board Ultra Lite";
+	compatible = "turing,imx6ul-turing", "fsl,imx6ul";
+};
