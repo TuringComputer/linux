@@ -68,6 +68,7 @@ static int imx_sgtl5000_probe(struct platform_device *pdev)
 	// Turing Computer:
 	// Make AUDMUX optional (e.g i.MX6UL)
 	// See https://patchwork.kernel.org/patch/8020071/
+	// and https://patchwork.kernel.org/patch/8019581/
 	if (!of_property_read_bool(np, "fsl,no-audmux")) {
         ret = of_property_read_u32(np, "mux-int-port", &int_port);
         if (ret) {

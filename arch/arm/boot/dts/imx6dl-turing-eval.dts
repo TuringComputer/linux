@@ -8,7 +8,7 @@
 
 / {
 	model = "Turing i.MX6 Evaluation Board Solo/Dual Lite";
-	compatible = "turing,imx6dl-turing", "fsl,imx6dl";
+	compatible = "turing,imx6dl-turing-eval", "turing,imx6dl-turing", "fsl,imx6dl";
 	
 	mxcfb1: fb@0 {
 		compatible = "fsl,mxc_sdc_fb";
