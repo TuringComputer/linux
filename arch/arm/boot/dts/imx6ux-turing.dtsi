@@ -246,6 +246,12 @@
 			>;
 		};
 		
+		pinctrl_wdog: wdoggrp {
+			fsl,pins = <
+				MX6UL_PAD_LCD_RESET__WDOG1_WDOG_ANY   0x30b0
+			>;
+		};
+		
 	};
 };
 
@@ -444,8 +450,11 @@
 };
 
 &wdog1 {
-	/*pinctrl-names = "default";*/
-	/*pinctrl-0 = <&pinctrl_wdog>;*/
+	/*
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_wdog>;
+	*/
 	fsl,wdog_b;
 	status = "okay";
 };
+

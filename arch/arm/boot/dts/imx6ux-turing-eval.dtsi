@@ -20,20 +20,6 @@
 		};
 	};
 	
-	backlight {
-		compatible = "pwm-backlight";
-		pwms = <&pwm3 0 1000000>;
-		brightness-levels = <0 4 8 16 32 64 128 255>;
-		default-brightness-level = <7>;
-		enable-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
-		status = "okay";
-	};
-
-	pxp_v4l2 {
-		compatible = "fsl,imx6ul-pxp-v4l2", "fsl,imx6sx-pxp-v4l2", "fsl,imx6sl-pxp-v4l2";
-		status = "okay";
-	};
-	
 	leds {
 		compatible = "gpio-leds";
 		status = "okay";
