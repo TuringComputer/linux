@@ -406,7 +406,7 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc1>;
 	bus-width = <4>;
-	cd-gpios = <&gpio3 4 GPIO_ACTIVE_LOW>;
+	cd-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 	wp-gpios = <&gpio2 15 GPIO_ACTIVE_HIGH>;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;
@@ -453,6 +453,5 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_wdog>;
 	fsl,wdog_b;
-	status = "okay";
 };
 
