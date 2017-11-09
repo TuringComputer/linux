@@ -117,13 +117,17 @@
 			enable-active-high;
 			regulator-off-in-suspend;
 		};
-
-		reg_3p3v: 3p3v {
+		
+		reg_audio: regulator@2 {
 			compatible = "regulator-fixed";
-			regulator-name = "3P3V";
 			regulator-min-microvolt = <3300000>;
 			regulator-max-microvolt = <3300000>;
-			regulator-always-on;
+			reg = <2>;
+			regulator-name = "osc-ckih1-enable";
+			gpio = <&gpio2 5 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			regulator-boot-on;
+			regulator-off-in-suspend;
 		};
 	};
 };
@@ -134,8 +138,8 @@
 		reg = <0x0a>;
 		clocks = <&audio_clk>;
 		status = "okay";
-		VDDA-supply = <&reg_3p3v>;
-		VDDIO-supply = <&reg_3p3v>;
+		VDDA-supply = <&reg_audio>;
+		VDDIO-supply = <&reg_audio>;
 	};
 	
 	lsm9ds1-ag@0x6B {
