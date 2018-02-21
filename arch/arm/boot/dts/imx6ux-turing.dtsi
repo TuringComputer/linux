@@ -12,10 +12,11 @@
 		#size-cells = <1>;
 		ranges;
 
+		/* global autoconfigured region for contiguous allocations */
 		linux,cma {
 			compatible = "shared-dma-pool";
 			reusable;
-			size = <0x14000000>;
+			size = <0x6000000>;		// 96M
 			linux,cma-default;
 		};
 	};

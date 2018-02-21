@@ -5,6 +5,22 @@
 #include "imx6q.dtsi"
 #include "imx6qdl-turing.dtsi"
 
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* global autoconfigured region for contiguous allocations */
+		linux,cma {
+			compatible = "shared-dma-pool";
+			reusable;
+			size = <0x14000000>;		// 320M
+			linux,cma-default;
+		};
+	};
+};
+
 &sata {
 	status = "okay";
 };
